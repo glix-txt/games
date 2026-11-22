@@ -216,18 +216,19 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
   <div class="hero"><div><h1>Import games</h1><p>Screenshot your library in any launcher and AI picks out the games.</p></div></div>
 
   <div class="panel hidden" id="aiSetup">
-    <h2><span class="stepn">!</span>Connect an AI reader (one-time)</h2>
-    <p class="muted" style="margin-top:-6px">Screenshots are read by an AI vision model. Google's Gemini has a <b>free</b> key. It takes about a minute to get one.</p>
+    <h2><span class="stepn">!</span>Connect Claude (one-time)</h2>
+    <p class="muted" style="margin-top:-6px">Screenshots are read by Claude, an AI vision model. You need an Anthropic API key (paid per use, a few pence per screenshot).</p>
     <ol class="muted" style="margin:0 0 14px;padding-left:20px">
-      <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with Google</li>
-      <li>Click <b>Create API key</b> and copy it</li>
+      <li>Sign in at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a></li>
+      <li>Add some credit under <b>Billing</b></li>
+      <li>Go to <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">API keys</a>, click <b>Create key</b>, and copy it</li>
       <li>Paste it below</li>
     </ol>
     <div class="row">
-      <div style="flex:3 1 280px"><label class="l" for="setupKey">Gemini API key</label><input id="setupKey" type="password" placeholder="AIza…" autocomplete="off"></div>
+      <div style="flex:3 1 280px"><label class="l" for="setupKey">Claude API key</label><input id="setupKey" type="password" placeholder="sk-ant-…" autocomplete="off"></div>
       <button class="btn" id="setupSave">Connect</button>
     </div>
-    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Your key is kept in this browser only and never added to GitHub. Prefer Claude? Switch in Settings.</p>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Your key is kept in this browser only and never added to GitHub. Don't share it: anyone with it can spend your credit.</p>
   </div>
 
   <div class="steps">
@@ -311,13 +312,13 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
     <h2>AI reader</h2>
     <div class="row">
       <div><label class="l" for="prov">Provider</label>
-        <select id="prov"><option value="gemini">Google Gemini (free key)</option><option value="claude">Anthropic Claude (paid key)</option></select></div>
+        <select id="prov"><option value="claude">Anthropic Claude</option><option value="gemini">Google Gemini</option></select></div>
       <div style="flex:2 1 280px"><label class="l" for="key">API key</label><input id="key" type="password" autocomplete="off" placeholder="Paste key"></div>
       <button class="btn" id="keySave">Save &amp; test</button>
       <button class="btn ghost" id="keyClear">Remove key</button>
     </div>
     <p class="muted" id="aiInfo" style="font-size:13px;margin:12px 0 0"></p>
-    <p class="muted" style="font-size:12.5px;margin:6px 0 0">Keys are stored in this browser only. Google may use free-tier Gemini requests to improve its products, so only screenshot your game library.</p>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0">Keys are stored in this browser only, never on GitHub.</p>
   </div>
   <div class="panel">
     <h2>Covers</h2>
@@ -473,14 +474,14 @@ function groups(){
 const statusOf=k=>db.meta[k]?.status||'backlog';
 function renderLibrary(){
   const all=groups();
-  $('#stats').innerHTML=[[all.length,'games'],[db.games.length,'copies'],[db.accounts.length,'accounts'],[all.filter(g=>statusOf(g.key)==='completed').length,'completed']]
+  $('#stats').innerHTML=[[all.length,'games'],[db.games.length,'copies'],[db.accounts.length,'accounts']]
     .map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
   const fa=$('#fAcct').value;
   $('#fAcct').innerHTML='<option value="">All accounts</option>'+db.accounts.map(a=>`<option value="${a.id}">${esc(acctLabel(a))}</option>`).join('');
   $('#fAcct').value=db.accounts.some(a=>a.id===fa)?fa:'';
   const cnt={all:all.length,dupes:all.filter(g=>g.copies.length>1).length};
   Object.keys(STATUSES).forEach(s=>cnt[s]=all.filter(g=>statusOf(g.key)===s).length);
-  $('#pills').innerHTML=[['all','All'],...Object.entries(STATUSES),['dupes','Owned twice+']].filter(([k])=>k==='all'||cnt[k])
+  $('#pills').innerHTML=[['all','All'],...Object.entries(STATUSES).filter(([k])=>k!=='completed'),['dupes','Owned twice+']].filter(([k])=>k==='all'||cnt[k])
     .map(([k,v])=>`<button class="pill ${pill===k?'on':''}" data-p="${k}">${v}<span class="n">${cnt[k]}</span></button>`).join('');
 
   const q=norm($('#q').value), acc=$('#fAcct').value;
@@ -612,7 +613,7 @@ Reply with JSON only, in this shape:
 {"platform":"steam|epic|gog|xbox|playstation|nintendo|ea|ubisoft|battlenet|amazon|itch|rockstar|other|unknown","games":[{"title":"...","confidence":0.0-1.0,"steam_appid":number or null}]}
 steam_appid only if you are certain of it, otherwise null.`;
 
-const ai=()=>({prov:db.settings.aiProvider||'gemini',key:db.settings.aiKey||''});
+const ai=()=>({prov:db.settings.aiProvider||'claude',key:db.settings.aiKey||''});
 async function geminiPickModel(key){
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&key=${encodeURIComponent(key)}`);
   const j=await r.json().catch(()=>({}));
@@ -632,7 +633,11 @@ async function readScreenshot(file){
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:db.settings.claudeModel||'claude-sonnet-5-5',max_tokens:4000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:PROMPT}]}]})});
     const j=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(r.status===401?'That Claude key was rejected':j.error?.message||`Claude error ${r.status}`);
+    if(!r.ok){ const m=j.error?.message||'';
+      if(r.status===401) throw new Error('That Claude key was rejected. Reconnect it in Settings.');
+      if(/credit balance/i.test(m)) throw new Error('Your Anthropic credit has run out. Add more under Billing at console.anthropic.com.');
+      if(r.status===429||r.status===529) throw new Error('Claude is busy right now. Wait a minute and try again.');
+      throw new Error(m||`Claude error ${r.status}`); }
     return parseJSON((j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''));
   }
   for(let attempt=0;attempt<2;attempt++){
@@ -656,18 +661,23 @@ function renderAI(){
   const {prov,key}=ai();
   $('#aiSetup').classList.toggle('hidden',!!key);
   $('#prov').value=prov; $('#key').value=key;
-  $('#aiInfo').innerHTML=key?`<span class="ai-ok" style="display:inline-flex"><span class="dotlive"></span>Connected to ${prov==='claude'?'Claude ('+esc(db.settings.claudeModel||'claude-sonnet-5-5')+')':'Gemini'+(db.settings.geminiModel?' ('+esc(db.settings.geminiModel)+')':'')}</span>`:'Not connected. Get a free Gemini key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.';
+  $('#aiInfo').innerHTML=key?`<span class="ai-ok" style="display:inline-flex"><span class="dotlive"></span>Connected to ${prov==='claude'?'Claude ('+esc(db.settings.claudeModel||'claude-sonnet-5-5')+')':'Gemini'+(db.settings.geminiModel?' ('+esc(db.settings.geminiModel)+')':'')}</span>`:'Not connected. Create a Claude key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.';
 }
 async function saveKey(prov,key,btn){
   key=key.trim(); if(!key) return toast('Paste a key first');
   const old=btn.innerHTML; btn.innerHTML='<span class="spin"></span>'; btn.disabled=true;
   try{
     if(prov==='gemini'){db.settings.geminiModel=await geminiPickModel(key);}
+    else{
+      if(!key.startsWith('sk-ant-')) throw new Error('Claude keys start with sk-ant-. Check you copied all of it.');
+      const r=await fetch('https://api.anthropic.com/v1/models',{headers:{'x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}});
+      if(r.status===401||r.status===403) throw new Error('That Claude key was rejected. Check you copied all of it.');
+    }
     db.settings.aiProvider=prov; db.settings.aiKey=key; save(); renderAI(); updScan(); toast('AI reader connected');
   }catch(e){toast(e.message);}
   finally{btn.innerHTML=old;btn.disabled=false;}
 }
-$('#setupSave').onclick=e=>saveKey('gemini',$('#setupKey').value,e.currentTarget);
+$('#setupSave').onclick=e=>saveKey('claude',$('#setupKey').value,e.currentTarget);
 $('#keySave').onclick=e=>saveKey($('#prov').value,$('#key').value,e.currentTarget);
 $('#keyClear').onclick=()=>{delete db.settings.aiKey;delete db.settings.geminiModel;save();renderAI();updScan();toast('Key removed');};
 

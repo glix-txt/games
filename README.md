@@ -1,6 +1,6 @@
 # Game Vault
 
-Track every game across Steam, Epic, Xbox, PlayStation, Nintendo and more, across all your accounts. Screenshot a launcher library and an AI vision model (Gemini free key, or Claude) picks out the games; covers come from Wikipedia/Steam.
+Track every game across Steam, Epic, Xbox, PlayStation, Nintendo and more, across all your accounts. Screenshot a launcher library and Claude (your own Anthropic API key) picks out the games; covers come from Wikipedia/Steam.
 
 Live: https://glix-txt.github.io/games/
 
