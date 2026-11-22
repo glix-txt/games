@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Game Vault</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%238b7bff'/%3E%3Cstop offset='1' stop-color='%23ff5d8f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='4.5' stroke-linecap='round' stroke-linejoin='round' transform='translate(8 8)'%3E%3Cpath d='M12 22h8M16 18v8M30 24h.01M36 20h.01'/%3E%3Cpath d='M34.6 10H13.4a8 8 0 0 0-7.92 6.86l-1.46 10.2A6 6 0 0 0 14 32.4L18 28h12l4 4.4a6 6 0 0 0 10-5.34l-1.46-10.2A8 8 0 0 0 34.6 10z'/%3E%3C/g%3E%3C/svg%3E">
+<meta name="theme-color" content="#07080c">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -84,8 +86,8 @@ select option{background:#151821}
 .cover{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#151821;box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .2s,box-shadow .2s;outline:1px solid var(--line)}
 .card:hover .cover,.card:focus-visible .cover{transform:translateY(-4px) scale(1.015);box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 2px var(--accent)}
 .card:focus-visible{outline:0}
-.cover img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
-.cover img.ok{opacity:1}
+.cover>img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
+.cover>img.ok{opacity:1}
 .ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:14px 14px 40px;
   background:radial-gradient(120% 80% at 0% 0%,hsl(var(--h) 80% 60% / .9),transparent 60%),radial-gradient(120% 90% at 100% 100%,hsl(calc(var(--h) + 60) 80% 45% / .9),transparent 60%),#14161f}
 .ph span{font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-weight:700;font-size:19px;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.5);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
@@ -104,6 +106,14 @@ select option{background:#151821}
 
 .sb{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 5px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em;color:#0a0b10;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .sb.lg{min-width:40px;height:40px;border-radius:11px;font-size:13px}
+.sb{flex-shrink:0}
+.sb.img{background:rgba(10,12,18,.85)!important;padding:0;width:22px;min-width:22px;outline:1px solid rgba(255,255,255,.18)}
+.sb.img img{width:16px;height:16px;object-fit:contain;display:block}
+.sb.img.lg{width:40px;min-width:40px}
+.sb.img.lg img{width:28px;height:28px}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.iconrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.2)}
+.iconrow .nm{flex:1;font-weight:600;font-size:14px}
 
 .empty{text-align:center;padding:70px 20px;color:var(--muted);border:1px dashed var(--line2);border-radius:var(--r)}
 .empty h2{color:var(--text);margin-bottom:8px}
@@ -303,6 +313,12 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
     </div>
   </div>
   <div class="accts" id="acctList"></div>
+  <div class="panel" style="margin-top:18px" id="iconPanel">
+    <h2>Store icons</h2>
+    <p class="muted" style="margin-top:-6px">Swap the letter badges for your own icons. Upload a small image (PNG or SVG works best) for each store and it shows on every game.</p>
+    <div class="icons" id="iconList"></div>
+    <input type="file" id="iconFile" accept="image/*" hidden>
+  </div>
 </section>
 
 <!-- SETTINGS -->
@@ -389,7 +405,10 @@ const srcColor=a=>SOURCES[a.source]?.color||'#a3abbf';
 const acctById=id=>db.accounts.find(a=>a.id===id);
 const acctLabel=a=>`${srcName(a)} · ${a.username||maskEmail(a.email)||'unnamed'}`;
 function maskEmail(e){ if(!e) return ''; if(!db.settings.mask) return e; const [u,d]=e.split('@'); return (u||'').slice(0,1)+'•••@'+(d||''); }
-const badge=(a,cls='')=>`<span class="sb ${cls}" style="background:${srcColor(a)}" title="${esc(acctLabel(a))}">${esc(srcAb(a))}</span>`;
+const iconKey=a=>a.source==='other'&&a.customSource?'other:'+a.customSource.toLowerCase():a.source;
+const badge=(a,cls='')=>{const ic=(db.settings.icons||{})[iconKey(a)];
+  return ic?`<span class="sb img ${cls}" title="${esc(acctLabel(a))}"><img src="${ic}" alt="${esc(srcName(a))}"></span>`
+           :`<span class="sb ${cls}" style="background:${srcColor(a)}" title="${esc(acctLabel(a))}">${esc(srcAb(a))}</span>`;};
 const hue=t=>{let h=0;for(const c of String(t))h=(h*31+c.charCodeAt(0))%360;return h;};
 const meta=k=>db.meta[k]||(db.meta[k]={});
 
@@ -575,7 +594,23 @@ $('#impNewAcctBtn').onclick=()=>$('#impNewAcct').classList.toggle('hidden');
 $('#naSave').onclick=()=>{const a=addAccount($('#naSource').value,$('#naCustom').value,$('#naUser').value,$('#naEmail').value);
   if(a){$('#naUser').value=$('#naEmail').value=$('#naCustom').value='';$('#impNewAcct').classList.add('hidden');render();$('#impAcct').value=a.id;updScan();renderCands();toast('Account added');}};
 $('#maskEmail').onchange=e=>{db.settings.mask=e.target.checked;save();render();};
+function renderIcons(){
+  const seen=new Map(); db.accounts.forEach(a=>{const k=iconKey(a); if(!seen.has(k)) seen.set(k,a);});
+  $('#iconPanel').classList.toggle('hidden',!seen.size);
+  $('#iconList').innerHTML=[...seen].map(([k,a])=>`<div class="iconrow" data-k="${esc(k)}">${badge(a,'lg')}<span class="nm">${esc(srcName(a))}</span>
+    <button class="btn ghost sm" data-ic="up">Upload</button>${(db.settings.icons||{})[k]?'<button class="btn ghost sm" data-ic="rm">Reset</button>':''}</div>`).join('');
+}
+let iconTarget=null;
+$('#iconList').onclick=e=>{const b=e.target.closest('button');if(!b)return;const k=b.closest('.iconrow').dataset.k;
+  if(b.dataset.ic==='rm'){delete db.settings.icons[k];save();render();toast('Icon reset');return;}
+  iconTarget=k;$('#iconFile').click();};
+$('#iconFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f||!iconTarget)return;
+  const img=new Image();img.onload=()=>{const S=96,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');
+    const r=Math.min(S/img.width,S/img.height);const w=img.width*r,h=img.height*r;x.drawImage(img,(S-w)/2,(S-h)/2,w,h);
+    db.settings.icons={...(db.settings.icons||{}),[iconTarget]:c.toDataURL('image/png')};save();render();toast('Icon updated');URL.revokeObjectURL(img.src);};
+  img.onerror=()=>toast("Couldn't open that image");img.src=URL.createObjectURL(f);};
 function renderAccounts(){
+  renderIcons();
   $('#maskEmail').checked=!!db.settings.mask;
   const el=$('#acctList');
   if(!db.accounts.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No accounts yet. Add your Steam, Epic, Xbox and other accounts above.</div>';return;}
