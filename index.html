@@ -3,580 +3,787 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Game Vault — every game, every account</title>
+<title>Game Vault</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0d0f14; --panel:#151922; --panel2:#1b2030; --line:#262c3d;
-    --text:#e8ebf2; --muted:#8b93a7; --accent:#7cf29c; --accent2:#5b8cff; --warn:#ffb454; --bad:#ff6b6b;
-    --r:12px;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif}
-  h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;margin:0}
-  a{color:var(--accent2)}
-  header{display:flex;align-items:center;gap:24px;padding:18px 28px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(13,15,20,.92);backdrop-filter:blur(8px);z-index:5;flex-wrap:wrap}
-  .logo{font-family:"Space Grotesk";font-weight:700;font-size:22px;letter-spacing:-.5px}
-  .logo span{color:var(--accent)}
-  nav{display:flex;gap:4px;flex-wrap:wrap}
-  nav button{background:none;border:0;color:var(--muted);padding:8px 14px;border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
-  nav button.on{background:var(--panel2);color:var(--text)}
-  nav button:hover{color:var(--text)}
-  main{max-width:1100px;margin:0 auto;padding:28px}
-  .view{display:none}.view.on{display:block}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px;margin-bottom:20px}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
-  .row>*{flex:1 1 160px}
-  label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
-  input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:10px 12px;font:inherit}
-  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent2);outline-offset:-1px}
-  .btn{background:var(--accent);color:#0b1a10;border:0;border-radius:8px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;flex:0 0 auto}
-  .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
-  .btn.danger{background:transparent;color:var(--bad);border:1px solid #4a2630}
-  .btn:disabled{opacity:.45;cursor:not-allowed}
-  .btn.sm{padding:6px 12px;font-size:13px}
-  .muted{color:var(--muted)}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
-  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
-  .stat b{display:block;font-family:"Space Grotesk";font-size:28px}
-  .stat span{color:var(--muted);font-size:13px}
-  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
-  .chip .dot{width:8px;height:8px;border-radius:50%}
-  .chip button{background:none;border:0;color:var(--muted);cursor:pointer;padding:0 0 0 2px;font-size:14px;line-height:1}
-  .chip button:hover{color:var(--bad)}
-  table{width:100%;border-collapse:collapse}
-  th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
-  td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
-  tr:last-child td{border-bottom:0}
-  td.title{font-weight:600}
-  td select{width:auto;padding:5px 8px;font-size:13px}
-  .copies{display:flex;gap:6px;flex-wrap:wrap}
-  .dup{color:var(--warn);font-size:12px;font-weight:600;margin-left:6px}
-  .empty{text-align:center;padding:40px;color:var(--muted)}
-  .drop{border:2px dashed var(--line);border-radius:var(--r);padding:34px;text-align:center;cursor:pointer;transition:.15s}
-  .drop.over,.drop:hover{border-color:var(--accent);background:rgba(124,242,156,.04)}
-  .drop b{font-family:"Space Grotesk";font-size:18px}
-  .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-  .thumb{position:relative;width:120px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
-  .thumb img{width:100%;height:100%;object-fit:cover}
-  .thumb button{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
-  .progress{height:6px;background:var(--panel2);border-radius:99px;overflow:hidden;margin-top:12px;display:none}
-  .progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
-  .cand{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
-  .cand input[type=checkbox]{width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)}
-  .cand input[type=text]{padding:6px 10px}
-  .conf{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex:0 0 auto}
-  .conf.hi{background:#173524;color:var(--accent)}.conf.mid{background:#3a2e16;color:var(--warn)}.conf.lo{background:#3b1d22;color:var(--bad)}
-  .owned{font-size:11px;color:var(--warn);flex:0 0 auto}
-  .acct{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
-  .acct:last-child{border-bottom:0}
-  .badge{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-family:"Space Grotesk";font-weight:700;color:#0b0d12;flex:0 0 auto}
-  .acct .info{flex:1;min-width:0}
-  .acct .info div{overflow:hidden;text-overflow:ellipsis}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel2);border:1px solid var(--line);padding:12px 20px;border-radius:10px;transition:.25s;z-index:20;font-weight:600}
-  .toast.show{transform:translateX(-50%) translateY(0)}
-  .note{font-size:13px;color:var(--muted);background:var(--panel2);border-left:3px solid var(--accent2);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:14px}
-  .hidden{display:none!important}
-  @media (max-width:700px){main{padding:16px}header{padding:14px 16px}td,th{padding:8px 6px}.hide-sm{display:none}}
+:root{
+  --bg:#07080c; --bg2:#0c0e15; --panel:rgba(255,255,255,.035); --panel-solid:#11141d; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --text:#eef1f7; --muted:#8a91a5; --dim:#5d6478;
+  --accent:#8b7bff; --accent2:#4fd1c5; --hot:#ff5d8f; --warn:#ffb547; --ok:#5be38f; --bad:#ff5d6c;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html{scrollbar-color:#2a2f3e transparent}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(900px 500px at 10% -10%,rgba(139,123,255,.18),transparent 60%),
+             radial-gradient(700px 500px at 100% 0%,rgba(79,209,197,.10),transparent 60%),
+             radial-gradient(800px 600px at 50% 120%,rgba(255,93,143,.08),transparent 60%)}
+h1,h2,h3{font-family:"Space Grotesk",Inter,sans-serif;margin:0;letter-spacing:-.02em}
+button{font:inherit;color:inherit}
+a{color:var(--accent2)}
+.hidden{display:none!important}
+
+/* header */
+header{position:sticky;top:0;z-index:30;backdrop-filter:blur(16px) saturate(1.4);background:rgba(7,8,12,.72);border-bottom:1px solid var(--line)}
+.bar{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:28px;padding:14px 28px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-weight:700;font-size:21px}
+.logo .mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--hot));box-shadow:0 6px 20px rgba(139,123,255,.4)}
+nav{display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);padding:4px;border-radius:12px}
+nav button{background:none;border:0;color:var(--muted);padding:7px 16px;border-radius:9px;font-weight:600;cursor:pointer;transition:.15s}
+nav button.on{background:rgba(255,255,255,.09);color:var(--text)}
+nav button:hover{color:var(--text)}
+.bar .spacer{flex:1}
+main{max-width:1320px;margin:0 auto;padding:28px}
+
+/* controls */
+.view{display:none;animation:fade .25s ease}.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:18px}
+label.l{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+input,select,textarea{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--line2);color:var(--text);border-radius:10px;padding:10px 13px;font:inherit;transition:.15s}
+input:focus,select:focus,textarea:focus{outline:0;border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,123,255,.25)}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 55%,calc(100% - 12px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+select option{background:#151821}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.row>*{flex:1 1 170px}
+.btn{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;transition:.15s;
+  background:linear-gradient(135deg,var(--accent),#6f5cff);color:#fff;box-shadow:0 6px 18px rgba(111,92,255,.35)}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.btn.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line2);box-shadow:none;color:var(--text)}
+.btn.danger{background:rgba(255,93,108,.1);border:1px solid rgba(255,93,108,.3);color:var(--bad);box-shadow:none}
+.btn.sm{padding:7px 13px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+.muted{color:var(--muted)}
+
+/* stats */
+.hero{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+.hero h1{font-size:34px}
+.hero p{margin:4px 0 0;color:var(--muted)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 16px;min-width:110px}
+.stat b{display:block;font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-size:24px;line-height:1.1}
+.stat span{color:var(--muted);font-size:12px}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.search{position:relative;flex:1 1 260px}
+.search input{padding-left:40px;border-radius:12px}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
+.toolbar select{width:auto;flex:0 0 auto;border-radius:12px}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.pill{border:1px solid var(--line2);background:transparent;color:var(--muted);padding:5px 13px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;gap:7px;align-items:center;transition:.15s}
+.pill:hover{color:var(--text)}
+.pill.on{background:var(--text);color:#0a0b10;border-color:var(--text)}
+.pill .n{opacity:.6;font-weight:500}
+
+/* grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:22px 18px}
+.card{background:none;border:0;padding:0;text-align:left;cursor:pointer;position:relative}
+.cover{position:relative;aspect-ratio:3/4;border-radius:14px;overflow:hidden;background:#151821;box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .2s,box-shadow .2s;outline:1px solid var(--line)}
+.card:hover .cover,.card:focus-visible .cover{transform:translateY(-4px) scale(1.015);box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 2px var(--accent)}
+.card:focus-visible{outline:0}
+.cover img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s}
+.cover img.ok{opacity:1}
+.ph{position:absolute;inset:0;display:flex;align-items:flex-end;padding:14px 14px 40px;
+  background:radial-gradient(120% 80% at 0% 0%,hsl(var(--h) 80% 60% / .9),transparent 60%),radial-gradient(120% 90% at 100% 100%,hsl(calc(var(--h) + 60) 80% 45% / .9),transparent 60%),#14161f}
+.ph span{font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-weight:700;font-size:19px;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.5);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.cover::after{content:"";position:absolute;z-index:1;inset:auto 0 0 0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.55));pointer-events:none}
+.st{position:absolute;top:9px;left:9px;z-index:2;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;backdrop-filter:blur(8px);background:rgba(0,0,0,.55);color:#fff}
+.st.playing{background:rgba(79,209,197,.85);color:#04211e}.st.completed{background:rgba(91,227,143,.9);color:#062412}.st.dropped{background:rgba(255,93,108,.85)}.st.wishlist{background:rgba(255,181,71,.9);color:#2a1a00}
+.cnt{position:absolute;top:9px;right:9px;z-index:2;font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;background:var(--hot);color:#fff;box-shadow:0 4px 12px rgba(255,93,143,.5)}
+.srcs{position:absolute;bottom:9px;left:9px;z-index:2;display:flex;gap:4px}
+.card .t{margin-top:10px;font-weight:600;font-size:14px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .u{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sel-box{position:absolute;top:9px;right:9px;z-index:3;width:24px;height:24px;border-radius:7px;border:2px solid #fff;background:rgba(0,0,0,.4);display:none;place-items:center}
+.selecting .sel-box{display:grid}.selecting .cnt{display:none}
+.card.sel .sel-box{background:var(--accent);border-color:var(--accent)}
+.card.sel .sel-box::after{content:"✓";font-weight:900;font-size:14px}
+.card.sel .cover{box-shadow:0 0 0 3px var(--accent)}
+
+.sb{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 5px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em;color:#0a0b10;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.sb.lg{min-width:40px;height:40px;border-radius:11px;font-size:13px}
+
+.empty{text-align:center;padding:70px 20px;color:var(--muted);border:1px dashed var(--line2);border-radius:var(--r)}
+.empty h2{color:var(--text);margin-bottom:8px}
+
+/* select bar */
+.selbar{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:40;display:flex;gap:10px;align-items:center;background:#171a25;border:1px solid var(--line2);border-radius:14px;padding:10px 12px 10px 18px;box-shadow:0 20px 50px rgba(0,0,0,.6)}
+
+/* import */
+.steps{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media(max-width:900px){.steps{grid-template-columns:1fr}}
+.stepn{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:rgba(139,123,255,.18);color:var(--accent);font-weight:800;font-size:13px;margin-right:10px}
+.panel h2{font-size:19px;display:flex;align-items:center;margin-bottom:14px}
+.drop{border:2px dashed var(--line2);border-radius:14px;padding:38px 20px;text-align:center;cursor:pointer;transition:.2s;background:rgba(0,0,0,.2)}
+.drop:hover,.drop.over{border-color:var(--accent);background:rgba(139,123,255,.06)}
+.drop .big{font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-size:19px;font-weight:700;margin:10px 0 2px}
+kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+.thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.thumb{position:relative;width:124px;height:80px;border-radius:10px;overflow:hidden;outline:1px solid var(--line2)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb button{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.75);color:#fff;cursor:pointer}
+.thumb.busy::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(139,123,255,.45) 50%,transparent 70%);background-size:200% 100%;animation:shine 1.1s linear infinite}
+.thumb.done::before{content:"✓";position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,30,18,.6);font-size:26px;color:var(--ok);font-weight:900;z-index:1}
+@keyframes shine{from{background-position:200% 0}to{background-position:-200% 0}}
+.ai-ok{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.dotlive{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px rgba(91,227,143,.15)}
+
+.cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-top:6px}
+.cand{position:relative;border-radius:14px;transition:.15s}
+.cand .cover{aspect-ratio:3/4;cursor:pointer}
+.cand.off .cover{filter:grayscale(1) brightness(.45)}
+.cand .tick{position:absolute;top:9px;right:9px;z-index:3;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:900;background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.cand.off .tick{background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.6);color:transparent}
+.cand input{margin-top:8px;padding:7px 10px;font-size:13px;font-weight:600;border-radius:9px}
+.flag{position:absolute;left:9px;top:9px;z-index:3;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:.05em}
+.flag.owned{background:var(--warn);color:#2a1a00}.flag.low{background:rgba(255,93,108,.9);color:#fff}
+.notice{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;background:rgba(79,209,197,.08);border:1px solid rgba(79,209,197,.25);color:#bfeee9;padding:11px 14px;border-radius:12px;margin:12px 0}
+.notice.warn{background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.3);color:#ffdca6}
+
+/* accounts */
+.accts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.acct{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.acct .info{flex:1;min-width:0}
+.acct .info div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct .act{display:flex;gap:6px;flex-direction:column}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(3,4,8,.7);backdrop-filter:blur(10px);display:grid;place-items:center;padding:20px;animation:fade .2s}
+.sheet{width:min(820px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#10131b;border:1px solid var(--line2);border-radius:22px;display:grid;grid-template-columns:260px 1fr;box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative}
+@media(max-width:700px){.sheet{grid-template-columns:1fr}.sheet .side{max-width:220px;margin:0 auto}}
+.sheet .side{padding:22px}
+.sheet .side .cover{box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.sheet .body{padding:26px 26px 26px 6px}
+@media(max-width:700px){.sheet .body{padding:0 22px 22px}}
+.sheet h2{font-size:28px;line-height:1.1;margin-bottom:18px;padding-right:30px}
+.x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:rgba(255,255,255,.05);cursor:pointer;font-size:18px;z-index:2}
+.seg{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:22px}
+.seg button{border:1px solid var(--line2);background:transparent;color:var(--muted);padding:6px 12px;border-radius:9px;font-weight:600;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.own{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.own:last-child{border-bottom:0}
+.own .info{flex:1;min-width:0;font-size:14px}
+.own .info div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iconbtn{border:0;background:rgba(255,255,255,.06);width:30px;height:30px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.iconbtn:hover{color:var(--bad);background:rgba(255,93,108,.12)}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,120px);background:#1a1e2b;border:1px solid var(--line2);padding:12px 20px;border-radius:12px;transition:.3s cubic-bezier(.2,.9,.3,1.2);z-index:60;font-weight:600;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.toast.show{transform:translate(-50%,0)}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(max-width:700px){.stats{width:100%;flex-wrap:nowrap}.stat{flex:1;min-width:0;padding:8px 10px}.stat b{font-size:20px}.toolbar select{flex:1 1 120px}main{padding:16px}.bar{padding:12px 16px;gap:12px}.grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px 12px}.hero h1{font-size:26px}}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">game<span>vault</span></div>
-  <nav>
-    <button data-view="library" class="on">Library</button>
-    <button data-view="import">Import</button>
-    <button data-view="accounts">Accounts</button>
-    <button data-view="backup">Backup</button>
-  </nav>
+  <div class="bar">
+    <div class="logo"><div class="mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-3.96 3.43l-.73 5.1A3 3 0 0 0 7 16.2L9 14h6l2 2.2a3 3 0 0 0 5-2.67l-.73-5.1A4 4 0 0 0 17.3 5z"/></svg>
+    </div>Game Vault</div>
+    <nav>
+      <button data-view="library" class="on">Library</button>
+      <button data-view="import">Import</button>
+      <button data-view="accounts">Accounts</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+  </div>
 </header>
 
 <main>
-  <!-- LIBRARY -->
-  <section id="library" class="view on">
+<!-- LIBRARY -->
+<section id="library" class="view on">
+  <div class="hero">
+    <div><h1>Your library</h1><p id="heroSub">Every game, every account, one place.</p></div>
     <div class="stats" id="stats"></div>
+  </div>
+  <div class="toolbar">
+    <div class="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" placeholder="Search games…" autocomplete="off">
+    </div>
+    <select id="fAcct"></select>
+    <select id="fSort"><option value="az">A → Z</option><option value="new">Recently added</option><option value="copies">Most copies</option></select>
+    <button class="btn ghost" id="selToggle">Select</button>
+  </div>
+  <div class="pills" id="pills"></div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<!-- IMPORT -->
+<section id="import" class="view">
+  <div class="hero"><div><h1>Import games</h1><p>Screenshot your library in any launcher and AI picks out the games.</p></div></div>
+
+  <div class="panel hidden" id="aiSetup">
+    <h2><span class="stepn">!</span>Connect an AI reader (one-time)</h2>
+    <p class="muted" style="margin-top:-6px">Screenshots are read by an AI vision model. Google's Gemini has a <b>free</b> key. It takes about a minute to get one.</p>
+    <ol class="muted" style="margin:0 0 14px;padding-left:20px">
+      <li>Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with Google</li>
+      <li>Click <b>Create API key</b> and copy it</li>
+      <li>Paste it below</li>
+    </ol>
+    <div class="row">
+      <div style="flex:3 1 280px"><label class="l" for="setupKey">Gemini API key</label><input id="setupKey" type="password" placeholder="AIza…" autocomplete="off"></div>
+      <button class="btn" id="setupSave">Connect</button>
+    </div>
+    <p class="muted" style="font-size:12.5px;margin:10px 0 0">Your key is kept in this browser only and never added to GitHub. Prefer Claude? Switch in Settings.</p>
+  </div>
+
+  <div class="steps">
     <div class="panel">
-      <div class="row">
-        <div style="flex:2 1 220px"><label for="q">Search</label><input id="q" placeholder="Search your games…"></div>
-        <div><label for="fSource">Source</label><select id="fSource"></select></div>
-        <div><label for="fAcct">Account</label><select id="fAcct"></select></div>
-        <div><label for="fStatus">Status</label><select id="fStatus"></select></div>
-        <div><label for="fSort">Sort</label>
-          <select id="fSort"><option value="az">A → Z</option><option value="za">Z → A</option><option value="new">Recently added</option><option value="copies">Most copies</option></select>
+      <h2><span class="stepn">1</span>Which account?</h2>
+      <select id="impAcct"></select>
+      <button class="btn ghost sm" id="impNewAcctBtn" style="margin-top:10px">+ New account</button>
+      <div id="impNewAcct" class="hidden" style="margin-top:14px">
+        <div class="row" style="margin-bottom:10px">
+          <div><label class="l" for="naSource">Source</label><select id="naSource"></select></div>
+          <div class="hidden" id="naCustomWrap"><label class="l" for="naCustom">Source name</label><input id="naCustom" placeholder="e.g. Humble"></div>
         </div>
-      </div>
-      <label style="margin-top:12px;display:flex;gap:8px;align-items:center;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--text)">
-        <input type="checkbox" id="fDup" style="width:auto"> Only show games I own on more than one account
-      </label>
-    </div>
-    <div class="panel" style="padding:6px 10px">
-      <table>
-        <thead><tr><th>Game</th><th>Owned on</th><th>Status</th></tr></thead>
-        <tbody id="libBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- IMPORT -->
-  <section id="import" class="view">
-    <div class="panel">
-      <h2 style="margin-bottom:6px">Import from screenshots</h2>
-      <p class="muted" style="margin-top:0">Take a screenshot of your library in Steam, Epic, the Xbox app, the PlayStation app, etc. Drop it in, and the text gets read right here in your browser. Nothing is uploaded.</p>
-
-      <label>1 · Which account are these games from?</label>
-      <div class="row">
-        <div style="flex:3 1 260px"><select id="impAcct"></select></div>
-        <button class="btn ghost" id="impNewAcctBtn">+ New account</button>
-      </div>
-      <div id="impNewAcct" class="hidden" style="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px">
         <div class="row">
-          <div><label for="naSource">Source</label><select id="naSource"></select></div>
-          <div class="hidden" id="naCustomWrap"><label for="naCustom">Source name</label><input id="naCustom" placeholder="e.g. Battle.net"></div>
-          <div><label for="naUser">Username</label><input id="naUser" placeholder="Your username / gamertag"></div>
-          <div><label for="naEmail">Email</label><input id="naEmail" type="email" placeholder="you@example.com"></div>
-          <button class="btn" id="naSave">Add account</button>
+          <div><label class="l" for="naUser">Username</label><input id="naUser" placeholder="Username / gamertag"></div>
+          <div><label class="l" for="naEmail">Email</label><input id="naEmail" type="email" placeholder="you@example.com"></div>
         </div>
+        <button class="btn" id="naSave" style="margin-top:12px">Add account</button>
       </div>
-
-      <label style="margin-top:20px">2 · Add screenshots</label>
+    </div>
+    <div class="panel">
+      <h2><span class="stepn">2</span>Add screenshots</h2>
       <div class="drop" id="drop">
-        <b>Drop screenshots here</b><br>
-        <span class="muted">or click to choose files · or press <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste</span>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>
+        <div class="big">Drop screenshots here</div>
+        <span class="muted">click to choose · or <kbd>Ctrl</kbd> <kbd>V</kbd> to paste</span>
         <input type="file" id="file" accept="image/*" multiple hidden>
       </div>
       <div class="thumbs" id="thumbs"></div>
-      <div class="row" style="margin-top:14px">
-        <button class="btn" id="scanBtn" disabled>Scan screenshots</button>
-        <span class="muted" id="scanStatus" style="flex:1 1 200px;align-self:center"></span>
+      <div class="row" style="margin-top:14px;align-items:center">
+        <button class="btn" id="scanBtn" disabled>Find games</button>
+        <span class="muted" id="scanStatus" style="font-size:13.5px"></span>
       </div>
-      <div class="progress" id="prog"><i></i></div>
+    </div>
+  </div>
 
-      <details style="margin-top:18px">
-        <summary class="muted" style="cursor:pointer">No screenshot? Paste a list of titles instead</summary>
-        <textarea id="pasteList" rows="5" style="margin-top:10px" placeholder="One game per line"></textarea>
-        <button class="btn ghost sm" id="pasteBtn" style="margin-top:8px">Use this list</button>
-      </details>
+  <div class="panel hidden" id="reviewPanel">
+    <div class="row" style="align-items:center;margin-bottom:4px">
+      <h2 style="flex:1 1 auto;margin:0"><span class="stepn">3</span>Check what was found</h2>
+      <button class="btn ghost sm" id="selAll">All</button>
+      <button class="btn ghost sm" id="selNone">None</button>
+      <button class="btn ghost sm" id="clearCands">Clear</button>
     </div>
+    <div id="reviewNotes"></div>
+    <p class="muted" style="margin:6px 0 14px;font-size:13.5px">Tap a cover to include or exclude it. Fix a name by editing it.</p>
+    <div class="cands" id="cands"></div>
+    <div class="row" style="margin-top:20px;align-items:center">
+      <button class="btn" id="addSel">Add to library</button>
+      <span class="muted" id="addInfo" style="font-size:13.5px"></span>
+    </div>
+  </div>
 
-    <div class="panel hidden" id="reviewPanel">
-      <div class="row" style="align-items:center;margin-bottom:10px">
-        <h2 style="flex:1 1 auto">3 · Check what was found</h2>
-        <button class="btn ghost sm" id="selAll">Select all</button>
-        <button class="btn ghost sm" id="selNone">Select none</button>
-      </div>
-      <p class="muted" style="margin-top:0">Untick anything that isn't a game, and fix any misread titles. Low-confidence lines start unticked.</p>
-      <div id="cands"></div>
-      <div class="row" style="margin-top:16px">
-        <button class="btn" id="addSel">Add selected to library</button>
-      </div>
-    </div>
-  </section>
+  <details class="panel" style="padding:16px 22px">
+    <summary class="muted" style="cursor:pointer;font-weight:600">No screenshot? Type or paste a list instead</summary>
+    <textarea id="pasteList" rows="5" style="margin-top:12px" placeholder="One game per line"></textarea>
+    <button class="btn ghost sm" id="pasteBtn" style="margin-top:10px">Add to review</button>
+  </details>
+</section>
 
-  <!-- ACCOUNTS -->
-  <section id="accounts" class="view">
-    <div class="panel">
-      <h2 style="margin-bottom:14px">Add an account</h2>
-      <div class="row">
-        <div><label for="aSource">Source</label><select id="aSource"></select></div>
-        <div class="hidden" id="aCustomWrap"><label for="aCustom">Source name</label><input id="aCustom" placeholder="e.g. Battle.net"></div>
-        <div><label for="aUser">Username</label><input id="aUser" placeholder="Your username / gamertag"></div>
-        <div><label for="aEmail">Email</label><input id="aEmail" type="email" placeholder="you@example.com"></div>
-        <button class="btn" id="aSave">Add account</button>
-      </div>
+<!-- ACCOUNTS -->
+<section id="accounts" class="view">
+  <div class="hero"><div><h1>Accounts</h1><p>Every store login you own games on.</p></div>
+    <label style="display:flex;gap:8px;align-items:center;cursor:pointer;color:var(--muted);font-size:14px"><input type="checkbox" id="maskEmail" style="width:auto"> Hide emails</label>
+  </div>
+  <div class="panel">
+    <h2>Add an account</h2>
+    <div class="row">
+      <div><label class="l" for="aSource">Source</label><select id="aSource"></select></div>
+      <div class="hidden" id="aCustomWrap"><label class="l" for="aCustom">Source name</label><input id="aCustom" placeholder="e.g. Humble"></div>
+      <div><label class="l" for="aUser">Username</label><input id="aUser" placeholder="Username / gamertag"></div>
+      <div><label class="l" for="aEmail">Email</label><input id="aEmail" type="email" placeholder="you@example.com"></div>
+      <button class="btn" id="aSave">Add</button>
     </div>
-    <div class="panel">
-      <div class="row" style="align-items:center">
-        <h2 style="flex:1 1 auto">Your accounts</h2>
-        <label style="flex:0 0 auto;display:flex;gap:8px;align-items:center;margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--text)">
-          <input type="checkbox" id="maskEmail" style="width:auto"> Hide emails
-        </label>
-      </div>
-      <div id="acctList"></div>
-    </div>
-  </section>
+  </div>
+  <div class="accts" id="acctList"></div>
+</section>
 
-  <!-- BACKUP -->
-  <section id="backup" class="view">
-    <div class="panel">
-      <h2 style="margin-bottom:6px">Backup &amp; move devices</h2>
-      <p class="muted">Your library is saved in this browser only. It is <b>not</b> stored on GitHub, so your emails stay private even though the site is public. Download a backup now and then, and use it to move your library to another device or browser.</p>
-      <div class="row">
-        <button class="btn" id="expBtn">Download backup (.json)</button>
-        <button class="btn ghost" id="expCsv">Export games (.csv)</button>
-        <button class="btn ghost" id="impBtn">Restore from backup</button>
-        <input type="file" id="impFile" accept=".json,application/json" hidden>
-      </div>
+<!-- SETTINGS -->
+<section id="settings" class="view">
+  <div class="hero"><div><h1>Settings</h1><p>AI reader, backups and covers.</p></div></div>
+  <div class="panel">
+    <h2>AI reader</h2>
+    <div class="row">
+      <div><label class="l" for="prov">Provider</label>
+        <select id="prov"><option value="gemini">Google Gemini (free key)</option><option value="claude">Anthropic Claude (paid key)</option></select></div>
+      <div style="flex:2 1 280px"><label class="l" for="key">API key</label><input id="key" type="password" autocomplete="off" placeholder="Paste key"></div>
+      <button class="btn" id="keySave">Save &amp; test</button>
+      <button class="btn ghost" id="keyClear">Remove key</button>
     </div>
-    <div class="panel">
-      <h3 style="margin-bottom:8px;color:var(--bad)">Danger zone</h3>
-      <button class="btn danger" id="wipe">Delete everything</button>
+    <p class="muted" id="aiInfo" style="font-size:13px;margin:12px 0 0"></p>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0">Keys are stored in this browser only. Google may use free-tier Gemini requests to improve its products, so only screenshot your game library.</p>
+  </div>
+  <div class="panel">
+    <h2>Covers</h2>
+    <p class="muted" style="margin-top:-6px">Cover art comes from Wikipedia, or Steam if Wikipedia doesn't have it. Games without either get a generated tile.</p>
+    <button class="btn ghost" id="refetch">Look for missing covers again</button>
+  </div>
+  <div class="panel">
+    <h2>Backup &amp; move devices</h2>
+    <p class="muted" style="margin-top:-6px">Your library lives in this browser, not on GitHub, so your emails stay private. Download a backup now and then.</p>
+    <div class="row">
+      <button class="btn" id="expBtn">Download backup</button>
+      <button class="btn ghost" id="expCsv">Export CSV</button>
+      <button class="btn ghost" id="impBtn">Restore backup</button>
+      <input type="file" id="impFile" accept=".json,application/json" hidden>
     </div>
-  </section>
+  </div>
+  <div class="panel" style="border-color:rgba(255,93,108,.25)">
+    <h2 style="color:var(--bad)">Danger zone</h2>
+    <button class="btn danger" id="wipe">Delete everything</button>
+  </div>
+</section>
 </main>
 
+<div class="selbar hidden" id="selbar"><span id="selCount">0 selected</span>
+  <button class="btn ghost sm" id="selAllLib">Select all shown</button>
+  <button class="btn danger sm" id="selDel">Delete</button>
+  <button class="btn ghost sm" id="selDone">Done</button>
+</div>
 <div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
 <script>
-/* ---------- data ---------- */
+/* =================== data =================== */
 const SOURCES = {
-  steam:{name:'Steam',color:'#66c0f4'}, epic:{name:'Epic Games',color:'#d4d4d4'}, gog:{name:'GOG',color:'#b77cff'},
-  xbox:{name:'Xbox / Microsoft',color:'#4fd34f'}, playstation:{name:'PlayStation',color:'#3d8bff'}, nintendo:{name:'Nintendo',color:'#ff5c5c'},
-  ea:{name:'EA app',color:'#ff7a45'}, ubisoft:{name:'Ubisoft Connect',color:'#3fc1ff'}, battlenet:{name:'Battle.net',color:'#4cc3ff'},
-  amazon:{name:'Amazon Games',color:'#ffb347'}, itch:{name:'itch.io',color:'#fa5c5c'}, rockstar:{name:'Rockstar',color:'#ffcf33'},
-  other:{name:'Other',color:'#9aa3b8'}
+  steam:{name:'Steam',ab:'ST',color:'#66c0f4'}, epic:{name:'Epic Games',ab:'EG',color:'#e6e6e6'}, gog:{name:'GOG',ab:'GOG',color:'#c58cff'},
+  xbox:{name:'Xbox / Microsoft',ab:'XB',color:'#5ad65a'}, playstation:{name:'PlayStation',ab:'PS',color:'#4b8dff'}, nintendo:{name:'Nintendo',ab:'NS',color:'#ff5a5a'},
+  ea:{name:'EA app',ab:'EA',color:'#ff7d4d'}, ubisoft:{name:'Ubisoft Connect',ab:'UB',color:'#43c6ff'}, battlenet:{name:'Battle.net',ab:'BN',color:'#56b8ff'},
+  amazon:{name:'Amazon Games',ab:'AM',color:'#ffb84d'}, itch:{name:'itch.io',ab:'IO',color:'#ff6b6b'}, rockstar:{name:'Rockstar',ab:'R★',color:'#ffd23f'},
+  other:{name:'Other',ab:'??',color:'#a3abbf'}
 };
 const STATUSES = {backlog:'Backlog',playing:'Playing',completed:'Completed',dropped:'Dropped',wishlist:'Wishlist'};
-const KEY = 'gamevault.v1';
+const KEY='gamevault.v1';
+let db=load();
+function load(){ try{const d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.accounts&&d.games) return {meta:{},settings:{},...d};}catch(e){} return {accounts:[],games:[],meta:{},settings:{}}; }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){toast('Could not save: browser storage is full or blocked');} }
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-let db = load();
-function load(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.accounts && d.games) return {meta:{},settings:{},...d}; }catch(e){}
-  return {accounts:[],games:[],meta:{},settings:{}};
-}
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){ toast('Could not save — storage is full or blocked'); } }
-const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2));
-const $ = s => document.querySelector(s);
-const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-/* Same game, different store spelling → same key */
+/* Same game written differently → same key ("GTA V", "Grand Theft Auto V™", "...Premium Edition") */
+const ROMAN={ii:2,iii:3,iv:4,v:5,vi:6,vii:7,viii:8,ix:9,xi:11,xii:12,xiii:13,xv:15,xvi:16};
+const ABBR={gta:'grand theft auto',rdr:'red dead redemption',cod:'call of duty',csgo:'counter strike global offensive',botw:'legend of zelda breath of the wild',totk:'legend of zelda tears of the kingdom',mgs:'metal gear solid'};
 function norm(t){
-  return t.normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase()
-    .replace(/[™®©]/g,'')
-    .replace(/\b(game of the year|goty|definitive|deluxe|standard|complete|ultimate|gold|digital deluxe|enhanced|anniversary)( edition)?\b/g,'')
-    .replace(/\bedition\b/g,'')
-    .replace(/&/g,'and').replace(/[^a-z0-9]+/g,'').trim();
+  let s=String(t||'').replace(/[™®©℠]/g,'').normalize('NFKD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[™®©]/g,'').replace(/['’]/g,'').replace(/&/g,' and ');
+  s=s.replace(/[:\-–—_.,!?()\[\]\/]+/g,' ');
+  s=s.replace(/\b(game of the year|goty|definitive|deluxe|standard|complete|ultimate|gold|premium|enhanced|anniversary|directors cut|digital|special|collectors|legendary|launch|base game|full game)\b/g,' ');
+  s=s.replace(/\b(edition|version|bundle|pack)\b/g,' ');
+  let w=s.split(/\s+/).filter(Boolean);
+  if(w[0]==='the' && w.length>1) w.shift();
+  if(ABBR[w[0]]) w=[...ABBR[w[0]].split(' '),...w.slice(1)];
+  w=w.map(x=>ROMAN[x]!=null?String(ROMAN[x]):x);
+  if(w[0]==='the' && w.length>1) w.shift();
+  return w.join('');
 }
-const srcName = a => a.source==='other' && a.customSource ? a.customSource : SOURCES[a.source]?.name || 'Other';
-const srcColor = a => SOURCES[a.source]?.color || '#9aa3b8';
-const acctById = id => db.accounts.find(a=>a.id===id);
-function acctLabel(a){ return `${srcName(a)} · ${a.username || a.email || 'unnamed'}`; }
+const srcName=a=>a.source==='other'&&a.customSource?a.customSource:SOURCES[a.source]?.name||'Other';
+const srcAb=a=>a.source==='other'&&a.customSource?a.customSource.slice(0,2).toUpperCase():SOURCES[a.source]?.ab||'??';
+const srcColor=a=>SOURCES[a.source]?.color||'#a3abbf';
+const acctById=id=>db.accounts.find(a=>a.id===id);
+const acctLabel=a=>`${srcName(a)} · ${a.username||maskEmail(a.email)||'unnamed'}`;
 function maskEmail(e){ if(!e) return ''; if(!db.settings.mask) return e; const [u,d]=e.split('@'); return (u||'').slice(0,1)+'•••@'+(d||''); }
+const badge=(a,cls='')=>`<span class="sb ${cls}" style="background:${srcColor(a)}" title="${esc(acctLabel(a))}">${esc(srcAb(a))}</span>`;
+const hue=t=>{let h=0;for(const c of String(t))h=(h*31+c.charCodeAt(0))%360;return h;};
+const meta=k=>db.meta[k]||(db.meta[k]={});
 
-/* ---------- UI helpers ---------- */
+/* =================== UI basics =================== */
 let toastT;
-function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.view));
-function show(v){
-  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
-  document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id===v));
-  render();
-}
-function fillSourceSelect(sel){ sel.innerHTML = Object.entries(SOURCES).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join(''); }
-fillSourceSelect($('#aSource')); fillSourceSelect($('#naSource'));
-$('#aSource').onchange = ()=>$('#aCustomWrap').classList.toggle('hidden',$('#aSource').value!=='other');
-$('#naSource').onchange = ()=>$('#naCustomWrap').classList.toggle('hidden',$('#naSource').value!=='other');
+function show(v){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));document.querySelectorAll('.view').forEach(s=>s.classList.toggle('on',s.id===v));if(v!=='library')setSelecting(false);render();scrollTo({top:0});}
+function fillSources(sel){sel.innerHTML=Object.entries(SOURCES).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');}
+fillSources($('#aSource'));fillSources($('#naSource'));
+$('#aSource').onchange=()=>$('#aCustomWrap').classList.toggle('hidden',$('#aSource').value!=='other');
+$('#naSource').onchange=()=>$('#naCustomWrap').classList.toggle('hidden',$('#naSource').value!=='other');
 
-/* ---------- accounts ---------- */
-function addAccount(source, custom, username, email){
-  username=username.trim(); email=email.trim(); custom=custom.trim();
-  if(!username && !email){ toast('Add a username or an email'); return null; }
-  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('That email doesn\'t look right'); return null; }
-  if(db.accounts.some(a=>a.source===source && a.username.toLowerCase()===username.toLowerCase() && a.email.toLowerCase()===email.toLowerCase() && (a.customSource||'')===(source==='other'?custom:''))){ toast('That account already exists'); return null; }
-  const a = {id:uid(), source, customSource: source==='other'?custom:'', username, email, created:Date.now()};
-  db.accounts.push(a); save(); return a;
+/* =================== covers =================== */
+const coverQueue=[]; let coverActive=0;
+function wantCover(key,title,appid){
+  const m=meta(key);
+  if(appid && !m.appid) m.appid=appid;
+  if(m.cover!==undefined || m.coverPending) return;
+  m.coverPending=true; coverQueue.push({key,title}); pumpCovers();
 }
-$('#aSave').onclick = ()=>{
-  const a = addAccount($('#aSource').value,$('#aCustom').value,$('#aUser').value,$('#aEmail').value);
-  if(a){ $('#aUser').value=$('#aEmail').value=$('#aCustom').value=''; toast('Account added'); render(); }
-};
-$('#impNewAcctBtn').onclick = ()=>$('#impNewAcct').classList.toggle('hidden');
-$('#naSave').onclick = ()=>{
-  const a = addAccount($('#naSource').value,$('#naCustom').value,$('#naUser').value,$('#naEmail').value);
-  if(a){ $('#naUser').value=$('#naEmail').value=$('#naCustom').value=''; $('#impNewAcct').classList.add('hidden'); render(); $('#impAcct').value=a.id; updateScanBtn(); toast('Account added'); }
-};
-$('#maskEmail').onchange = e=>{ db.settings.mask=e.target.checked; save(); render(); };
-
-function renderAccounts(){
-  $('#maskEmail').checked = !!db.settings.mask;
-  const el = $('#acctList');
-  if(!db.accounts.length){ el.innerHTML = '<div class="empty">No accounts yet. Add your Steam, Epic, Xbox… accounts above.</div>'; return; }
-  el.innerHTML = db.accounts.map(a=>{
-    const n = db.games.filter(g=>g.accountId===a.id).length;
-    return `<div class="acct" data-id="${a.id}">
-      <div class="badge" style="background:${srcColor(a)}">${esc(srcName(a).slice(0,2))}</div>
-      <div class="info">
-        <div><b>${esc(a.username||'—')}</b> <span class="muted">· ${esc(srcName(a))}</span></div>
-        <div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · ${n} game${n===1?'':'s'}</div>
-      </div>
-      <button class="btn ghost sm" data-act="edit">Edit</button>
-      <button class="btn danger sm" data-act="del">Delete</button>
-    </div>`;
-  }).join('');
-}
-$('#acctList').onclick = e=>{
-  const b = e.target.closest('button'); if(!b) return;
-  const a = acctById(b.closest('.acct').dataset.id);
-  if(b.dataset.act==='del'){
-    const n = db.games.filter(g=>g.accountId===a.id).length;
-    if(!confirm(`Delete ${acctLabel(a)}${n?` and its ${n} game${n===1?'':'s'}`:''}?`)) return;
-    db.accounts = db.accounts.filter(x=>x.id!==a.id); db.games = db.games.filter(g=>g.accountId!==a.id); save(); render(); toast('Account deleted');
+function pumpCovers(){
+  while(coverActive<3 && coverQueue.length){
+    const job=coverQueue.shift(); coverActive++;
+    findCover(job.title,meta(job.key).appid).then(url=>{ const m=meta(job.key); m.cover=url||null; delete m.coverPending; save(); paintCover(job.key); })
+      .catch(()=>{ delete meta(job.key).coverPending; })
+      .finally(()=>{ coverActive--; pumpCovers(); });
   }
-  if(b.dataset.act==='edit'){
-    const row = b.closest('.acct');
-    row.innerHTML = `<div class="row" style="flex:1">
-      <div><label>Username</label><input data-f="username" value="${esc(a.username)}"></div>
-      <div><label>Email</label><input data-f="email" type="email" value="${esc(a.email)}"></div>
-      <button class="btn sm" data-act="saveEdit">Save</button><button class="btn ghost sm" data-act="cancel">Cancel</button></div>`;
-    row.querySelector('[data-act=cancel]').onclick = renderAccounts;
-    row.querySelector('[data-act=saveEdit]').onclick = ()=>{
-      const u=row.querySelector('[data-f=username]').value.trim(), em=row.querySelector('[data-f=email]').value.trim();
-      if(!u && !em) return toast('Add a username or an email');
-      if(em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return toast('That email doesn\'t look right');
-      a.username=u; a.email=em; save(); render(); toast('Saved');
-    };
-  }
-};
+}
+async function findCover(title,appid){
+  try{
+    const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=6&gsrsearch='+encodeURIComponent(title+' video game')+
+      '&prop=pageimages|description&piprop=thumbnail&pithumbsize=500&pilicense=any';
+    const j=await (await fetch(u)).json();
+    const want=norm(title);
+    const pages=Object.values(j.query?.pages||{}).filter(p=>p.thumbnail);
+    let best=null,bs=0;
+    for(const p of pages){
+      const pt=norm(p.title.replace(/\(.*?\)/g,'')), d=(p.description||'').toLowerCase();
+      let s=0;
+      if(pt===want) s+=4; else if(want.length>3 && (pt.startsWith(want)||want.startsWith(pt))) s+=2;
+      if(/video game|game\b/.test(d)) s+=3;
+      if(/series|franchise|character|film|novel|album|soundtrack|company|developer|person|actor/.test(d)) s-=3;
+      s-=(p.index||0)*.1;
+      if(s>bs){bs=s;best=p;}
+    }
+    if(best && bs>=5) return best.thumbnail.source;
+  }catch(e){}
+  if(appid) return `steam:${appid}`;
+  return null;
+}
+function coverSrcs(c){
+  if(!c) return [];
+  if(c.startsWith('steam:')){const id=c.slice(6);return[`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/library_600x900.jpg`,`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/header.jpg`];}
+  return [c];
+}
+function coverHTML(key,title){
+  const c=db.meta[key]?.cover;
+  const srcs=coverSrcs(c);
+  return `<div class="ph" style="--h:${hue(title)}"><span>${esc(title)}</span></div>`+
+    (srcs.length?`<img alt="" loading="lazy" data-srcs="${esc(srcs.join('|'))}" src="${esc(srcs[0])}" onload="this.classList.add('ok')" onerror="nextSrc(this)">`:'');
+}
+function nextSrc(img){const s=img.dataset.srcs.split('|');s.shift();if(s.length){img.dataset.srcs=s.join('|');img.src=s[0];}else img.remove();}
+function paintCover(key){
+  document.querySelectorAll(`[data-cover="${CSS.escape(key)}"]`).forEach(el=>{
+    const title=el.dataset.title; const keep=[...el.querySelectorAll('.st,.cnt,.srcs,.sel-box,.tick,.flag')];
+    el.innerHTML=coverHTML(key,title); keep.forEach(k=>el.appendChild(k));
+  });
+}
 
-/* ---------- library ---------- */
+/* =================== library =================== */
+let pill='all', selecting=false, selected=new Set();
 function groups(){
-  const m = new Map();
+  const m=new Map();
   for(const g of db.games){
-    const k = norm(g.title) || g.title.toLowerCase();
+    const k=norm(g.title)||g.title.toLowerCase();
     if(!m.has(k)) m.set(k,{key:k,title:g.title,copies:[],added:0});
-    const grp = m.get(k); grp.copies.push(g); grp.added=Math.max(grp.added,g.added||0);
-    if(g.title.length < grp.title.length) grp.title = g.title; // prefer the shorter, cleaner title
+    const G=m.get(k); G.copies.push(g); G.added=Math.max(G.added,g.added||0);
   }
   return [...m.values()];
 }
-function renderFilters(){
-  const keep = id=>$(id).value;
-  const s=keep('#fSource'), a=keep('#fAcct'), st=keep('#fStatus');
-  const usedSources = [...new Set(db.accounts.map(x=>x.source))];
-  $('#fSource').innerHTML = '<option value="">All sources</option>'+usedSources.map(k=>`<option value="${k}">${SOURCES[k]?.name||k}</option>`).join('');
-  $('#fAcct').innerHTML = '<option value="">All accounts</option>'+db.accounts.map(x=>`<option value="${x.id}">${esc(acctLabel(x))}</option>`).join('');
-  $('#fStatus').innerHTML = '<option value="">Any status</option>'+Object.entries(STATUSES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
-  $('#fSource').value=s; $('#fAcct').value=a; $('#fStatus').value=st;
-}
+const statusOf=k=>db.meta[k]?.status||'backlog';
 function renderLibrary(){
-  const all = groups();
-  const st = s=>db.meta[s]?.status||'backlog';
-  $('#stats').innerHTML = [
-    [all.length,'unique games'],[db.games.length,'copies owned'],[db.accounts.length,'accounts'],
-    [all.filter(g=>g.copies.length>1).length,'owned more than once'],[all.filter(g=>st(g.key)==='completed').length,'completed']
-  ].map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const all=groups();
+  $('#stats').innerHTML=[[all.length,'games'],[db.games.length,'copies'],[db.accounts.length,'accounts'],[all.filter(g=>statusOf(g.key)==='completed').length,'completed']]
+    .map(([n,l])=>`<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+  const fa=$('#fAcct').value;
+  $('#fAcct').innerHTML='<option value="">All accounts</option>'+db.accounts.map(a=>`<option value="${a.id}">${esc(acctLabel(a))}</option>`).join('');
+  $('#fAcct').value=db.accounts.some(a=>a.id===fa)?fa:'';
+  const cnt={all:all.length,dupes:all.filter(g=>g.copies.length>1).length};
+  Object.keys(STATUSES).forEach(s=>cnt[s]=all.filter(g=>statusOf(g.key)===s).length);
+  $('#pills').innerHTML=[['all','All'],...Object.entries(STATUSES),['dupes','Owned twice+']].filter(([k])=>k==='all'||cnt[k])
+    .map(([k,v])=>`<button class="pill ${pill===k?'on':''}" data-p="${k}">${v}<span class="n">${cnt[k]}</span></button>`).join('');
 
-  const q=norm($('#q').value), fs=$('#fSource').value, fa=$('#fAcct').value, fst=$('#fStatus').value, dup=$('#fDup').checked;
-  let rows = all.filter(g=>{
-    if(q && !g.key.includes(q)) return false;
-    if(fs && !g.copies.some(c=>acctById(c.accountId)?.source===fs)) return false;
-    if(fa && !g.copies.some(c=>c.accountId===fa)) return false;
-    if(fst && st(g.key)!==fst) return false;
-    if(dup && g.copies.length<2) return false;
-    return true;
-  });
-  const sort=$('#fSort').value;
-  rows.sort((x,y)=> sort==='za'? y.title.localeCompare(x.title) : sort==='new'? y.added-x.added : sort==='copies'? y.copies.length-x.copies.length||x.title.localeCompare(y.title) : x.title.localeCompare(y.title));
+  const q=norm($('#q').value), acc=$('#fAcct').value;
+  let rows=all.filter(g=>(!q||g.key.includes(q)||g.title.toLowerCase().includes($('#q').value.toLowerCase().trim()))
+    &&(!acc||g.copies.some(c=>c.accountId===acc))
+    &&(pill==='all'||(pill==='dupes'?g.copies.length>1:statusOf(g.key)===pill)));
+  const s=$('#fSort').value;
+  rows.sort((a,b)=>s==='new'?b.added-a.added:s==='copies'?b.copies.length-a.copies.length||a.title.localeCompare(b.title):a.title.localeCompare(b.title));
+  window._rows=rows;
+  $('#heroSub').textContent=db.games.length?`${all.length} game${all.length===1?'':'s'} across ${db.accounts.length} account${db.accounts.length===1?'':'s'}`:'Every game, every account, one place.';
 
-  if(!db.games.length){ $('#libBody').innerHTML = `<tr><td colspan="3" class="empty">Your vault is empty.<br><br><button class="btn" onclick="show('${db.accounts.length?'import':'accounts'}')">${db.accounts.length?'Import some games':'Add your first account'}</button></td></tr>`; return; }
-  if(!rows.length){ $('#libBody').innerHTML = '<tr><td colspan="3" class="empty">No games match those filters.</td></tr>'; return; }
-  $('#libBody').innerHTML = rows.map(g=>`<tr>
-    <td class="title">${esc(g.title)}${g.copies.length>1?`<span class="dup">×${g.copies.length}</span>`:''}</td>
-    <td><div class="copies">${g.copies.map(c=>{const a=acctById(c.accountId); if(!a) return '';
-      return `<span class="chip" title="${esc(acctLabel(a))}${a.email?' · '+esc(maskEmail(a.email)):''}"><span class="dot" style="background:${srcColor(a)}"></span>${esc(srcName(a))}<span class="muted hide-sm">${esc(a.username||maskEmail(a.email))}</span><button data-del="${c.id}" title="Remove this copy">×</button></span>`;}).join('')}</div></td>
-    <td><select data-key="${esc(g.key)}">${Object.entries(STATUSES).map(([k,v])=>`<option value="${k}" ${st(g.key)===k?'selected':''}>${v}</option>`).join('')}</select></td>
-  </tr>`).join('');
+  const grid=$('#grid'); grid.classList.toggle('selecting',selecting);
+  if(!db.games.length){ grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><h2>Your vault is empty</h2><p>${db.accounts.length?'Screenshot a launcher library and import it.':'Start by adding the accounts you own games on.'}</p><br><button class="btn" onclick="show('${db.accounts.length?'import':'accounts'}')">${db.accounts.length?'Import games':'Add an account'}</button></div>`; return; }
+  if(!rows.length){ grid.innerHTML='<div class="empty" style="grid-column:1/-1">No games match.</div>'; return; }
+  grid.innerHTML=rows.map(g=>{
+    const st=statusOf(g.key); const accts=[...new Map(g.copies.map(c=>[c.accountId,acctById(c.accountId)])).values()].filter(Boolean);
+    return `<button class="card ${selected.has(g.key)?'sel':''}" data-key="${esc(g.key)}">
+      <div class="cover" data-cover="${esc(g.key)}" data-title="${esc(g.title)}">${coverHTML(g.key,g.title)}
+        ${st!=='backlog'?`<span class="st ${st}">${STATUSES[st]}</span>`:''}
+        ${g.copies.length>1?`<span class="cnt">×${g.copies.length}</span>`:''}
+        <span class="srcs">${accts.slice(0,4).map(a=>badge(a)).join('')}</span>
+        <span class="sel-box"></span>
+      </div>
+      <div class="t">${esc(g.title)}</div>
+      <div class="u">${esc(accts.map(a=>a.username||srcName(a)).join(' · '))}</div>
+    </button>`;}).join('');
+  rows.forEach(g=>wantCover(g.key,g.title));
 }
-['#q','#fSource','#fAcct','#fStatus','#fSort','#fDup'].forEach(s=>$(s).addEventListener('input',renderLibrary));
-$('#libBody').addEventListener('change',e=>{ const k=e.target.dataset.key; if(k==null) return; db.meta[k]={...(db.meta[k]||{}),status:e.target.value}; save(); renderLibrary(); });
-$('#libBody').addEventListener('click',e=>{ const id=e.target.dataset.del; if(!id) return; const g=db.games.find(x=>x.id===id);
-  db.games=db.games.filter(x=>x.id!==id); save(); render(); toast(`Removed ${g?.title||'game'}`); });
+$('#pills').onclick=e=>{const b=e.target.closest('.pill');if(!b)return;pill=b.dataset.p;renderLibrary();};
+['#q','#fAcct','#fSort'].forEach(s=>$(s).addEventListener('input',renderLibrary));
+$('#grid').onclick=e=>{const c=e.target.closest('.card');if(!c)return;const k=c.dataset.key;
+  if(selecting){selected.has(k)?selected.delete(k):selected.add(k);c.classList.toggle('sel');updSel();return;}
+  openGame(k);};
+function setSelecting(on){selecting=on;selected.clear();$('#selbar').classList.toggle('hidden',!on);$('#selToggle').textContent=on?'Cancel':'Select';updSel();$('#grid').classList.toggle('selecting',on);document.querySelectorAll('.card.sel').forEach(c=>c.classList.remove('sel'));}
+function updSel(){$('#selCount').textContent=`${selected.size} selected`;$('#selDel').disabled=!selected.size;}
+$('#selToggle').onclick=()=>setSelecting(!selecting);
+$('#selDone').onclick=()=>setSelecting(false);
+$('#selAllLib').onclick=()=>{(window._rows||[]).forEach(g=>selected.add(g.key));renderLibrary();updSel();};
+$('#selDel').onclick=()=>{
+  if(!confirm(`Delete ${selected.size} game${selected.size===1?'':'s'} from every account?`))return;
+  db.games=db.games.filter(g=>!selected.has(norm(g.title)||g.title.toLowerCase()));const n=selected.size;save();setSelecting(false);render();toast(`Deleted ${n} game${n===1?'':'s'}`);};
 
-/* ---------- import: screenshots ---------- */
-let shots = []; // {id,file,url}
+/* game detail */
+function openGame(key){
+  const g=groups().find(x=>x.key===key); if(!g) return closeModal();
+  const st=statusOf(key);
+  $('#modalRoot').innerHTML=`<div class="modal" id="modal"><div class="sheet" role="dialog" aria-label="${esc(g.title)}">
+    <button class="x" id="mx" aria-label="Close">×</button>
+    <div class="side"><div class="cover" data-cover="${esc(key)}" data-title="${esc(g.title)}">${coverHTML(key,g.title)}</div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button class="btn ghost sm" id="mFind" style="flex:1">Find cover</button>
+        <button class="btn ghost sm" id="mUrl" style="flex:1">Use URL</button>
+      </div></div>
+    <div class="body">
+      <h2 id="mTitle">${esc(g.title)}</h2>
+      <label class="l">Status</label>
+      <div class="seg" id="mSeg">${Object.entries(STATUSES).map(([k,v])=>`<button data-s="${k}" class="${st===k?'on':''}">${v}</button>`).join('')}</div>
+      <label class="l">Owned on ${g.copies.length} account${g.copies.length===1?'':'s'}</label>
+      <div id="mOwn">${g.copies.map(c=>{const a=acctById(c.accountId);if(!a)return'';return`<div class="own">${badge(a,'lg')}<div class="info"><div><b>${esc(srcName(a))}</b> · ${esc(a.username||'—')}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · added ${new Date(c.added||Date.now()).toLocaleDateString('en-GB')}</div></div><button class="iconbtn" data-del="${c.id}" title="Remove from this account">✕</button></div>`;}).join('')}</div>
+      <div class="row" style="margin-top:22px">
+        <button class="btn ghost sm" id="mRename">Rename</button>
+        <button class="btn danger sm" id="mDelete">Delete game</button>
+      </div>
+    </div></div></div>`;
+  $('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
+  $('#mx').onclick=closeModal;
+  $('#mSeg').onclick=e=>{const s=e.target.dataset.s;if(!s)return;meta(key).status=s;save();openGame(key);renderLibrary();};
+  $('#mOwn').onclick=e=>{const id=e.target.dataset.del;if(!id)return;db.games=db.games.filter(x=>x.id!==id);save();renderLibrary();openGame(key);toast('Removed from that account');};
+  $('#mDelete').onclick=()=>{if(!confirm(`Delete ${g.title} from every account?`))return;db.games=db.games.filter(x=>(norm(x.title)||x.title.toLowerCase())!==key);save();closeModal();render();toast('Game deleted');};
+  $('#mRename').onclick=()=>{const t=prompt('Game title',g.title);if(!t||!t.trim())return;const nk=norm(t);
+    g.copies.forEach(c=>c.title=t.trim()); if(nk!==key){db.meta[nk]={...(db.meta[key]||{}),...(db.meta[nk]||{}),cover:db.meta[nk]?.cover};if(db.meta[nk].cover===undefined)delete db.meta[nk].cover;}
+    save();render();openGame(nk);};
+  $('#mFind').onclick=async()=>{const b=$('#mFind');b.innerHTML='<span class="spin"></span>';const url=await findCover(g.title,meta(key).appid);meta(key).cover=url;save();paintCover(key);b.textContent='Find cover';toast(url?'Cover updated':'No cover found, try Use URL');};
+  $('#mUrl').onclick=()=>{const u=prompt('Paste an image URL for the cover (right-click an image → Copy image address)');if(!u)return;if(!/^https?:\/\//.test(u.trim()))return toast('That needs to be a web link');meta(key).cover=u.trim();save();paintCover(key);};
+  document.onkeydown=e=>{if(e.key==='Escape')closeModal();};
+}
+function closeModal(){$('#modalRoot').innerHTML='';document.onkeydown=null;}
+
+/* =================== accounts =================== */
+const emailOk=e=>!e||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+function addAccount(source,custom,username,email){
+  username=username.trim();email=email.trim();custom=custom.trim();
+  if(!username&&!email){toast('Add a username or an email');return null;}
+  if(!emailOk(email)){toast("That email doesn't look right");return null;}
+  if(db.accounts.some(a=>a.source===source&&a.username.toLowerCase()===username.toLowerCase()&&a.email.toLowerCase()===email.toLowerCase()&&(a.customSource||'')===(source==='other'?custom:''))){toast('That account already exists');return null;}
+  const a={id:uid(),source,customSource:source==='other'?custom:'',username,email,created:Date.now()};
+  db.accounts.push(a);save();return a;
+}
+$('#aSave').onclick=()=>{const a=addAccount($('#aSource').value,$('#aCustom').value,$('#aUser').value,$('#aEmail').value);if(a){$('#aUser').value=$('#aEmail').value=$('#aCustom').value='';toast('Account added');render();}};
+$('#impNewAcctBtn').onclick=()=>$('#impNewAcct').classList.toggle('hidden');
+$('#naSave').onclick=()=>{const a=addAccount($('#naSource').value,$('#naCustom').value,$('#naUser').value,$('#naEmail').value);
+  if(a){$('#naUser').value=$('#naEmail').value=$('#naCustom').value='';$('#impNewAcct').classList.add('hidden');render();$('#impAcct').value=a.id;updScan();renderCands();toast('Account added');}};
+$('#maskEmail').onchange=e=>{db.settings.mask=e.target.checked;save();render();};
+function renderAccounts(){
+  $('#maskEmail').checked=!!db.settings.mask;
+  const el=$('#acctList');
+  if(!db.accounts.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No accounts yet. Add your Steam, Epic, Xbox and other accounts above.</div>';return;}
+  el.innerHTML=db.accounts.map(a=>{const n=db.games.filter(g=>g.accountId===a.id).length;
+    return `<div class="acct" data-id="${a.id}">${badge(a,'lg')}
+      <div class="info"><div><b>${esc(a.username||'—')}</b></div><div class="muted" style="font-size:13px">${esc(srcName(a))} · ${n} game${n===1?'':'s'}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')}</div></div>
+      <div class="act"><button class="btn ghost sm" data-act="edit">Edit</button><button class="btn danger sm" data-act="del">Delete</button></div></div>`;}).join('');
+}
+$('#acctList').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;const card=b.closest('.acct');const a=acctById(card.dataset.id);
+  if(b.dataset.act==='del'){const n=db.games.filter(g=>g.accountId===a.id).length;
+    if(!confirm(`Delete ${acctLabel(a)}${n?` and its ${n} game${n===1?'':'s'}`:''}?`))return;
+    db.accounts=db.accounts.filter(x=>x.id!==a.id);db.games=db.games.filter(g=>g.accountId!==a.id);save();render();toast('Account deleted');}
+  if(b.dataset.act==='edit'){
+    card.innerHTML=`<div style="flex:1;display:grid;gap:8px"><input data-f="u" value="${esc(a.username)}" placeholder="Username"><input data-f="e" type="email" value="${esc(a.email)}" placeholder="Email">
+      <div style="display:flex;gap:6px"><button class="btn sm" data-x="s">Save</button><button class="btn ghost sm" data-x="c">Cancel</button></div></div>`;
+    card.querySelector('[data-x=c]').onclick=e2=>{e2.stopPropagation();renderAccounts();};
+    card.querySelector('[data-x=s]').onclick=e2=>{e2.stopPropagation();const u=card.querySelector('[data-f=u]').value.trim(),em=card.querySelector('[data-f=e]').value.trim();
+      if(!u&&!em)return toast('Add a username or an email');if(!emailOk(em))return toast("That email doesn't look right");a.username=u;a.email=em;save();render();toast('Saved');};
+  }
+};
+
+/* =================== AI =================== */
+const PROMPT=`You are reading a screenshot of a video game library from a launcher or store (for example Steam, Epic Games, the Xbox app, PlayStation, Nintendo, GOG, EA app, Ubisoft Connect, Battle.net). It may be a list, or a grid of cover art where the names only appear as logos on the art or as short captions underneath.
+
+List every distinct full game you can see.
+Rules:
+- Use the official full English title, e.g. "Grand Theft Auto V" not "GTA 5", "Star Wars Battlefront II" not "STAR WARS™ Battle...".
+- Identify games from their cover art and logos as well as text. If a caption is cut off ("Death Stranding Co..."), give the full title it refers to.
+- Each game once only. If two tiles are the same game (different editions, a cover and its caption), list it once.
+- Ignore DLC, add-ons, season passes, soundtracks, demos, tools, menu items, achievement counts, buttons, file sizes and playtimes.
+- Skip anything you can't confidently identify. Never invent games.
+
+Reply with JSON only, in this shape:
+{"platform":"steam|epic|gog|xbox|playstation|nintendo|ea|ubisoft|battlenet|amazon|itch|rockstar|other|unknown","games":[{"title":"...","confidence":0.0-1.0,"steam_appid":number or null}]}
+steam_appid only if you are certain of it, otherwise null.`;
+
+const ai=()=>({prov:db.settings.aiProvider||'gemini',key:db.settings.aiKey||''});
+async function geminiPickModel(key){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&key=${encodeURIComponent(key)}`);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error?.message?.includes('API key')?'That Gemini key was rejected. Check you copied all of it.':(j.error?.message||`Gemini error ${r.status}`));
+  const ms=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')).map(m=>m.name.replace('models/',''));
+  const ver=n=>parseFloat((n.match(/gemini-(\d+(?:\.\d+)?)/)||[])[1]||0);
+  const rank=n=>(/-flash$/.test(n)?3:/-flash-lite$/.test(n)?2:/flash/.test(n)&&!/image|tts|live|audio|thinking|exp/.test(n)?1:0);
+  const cands=ms.filter(n=>/^gemini-/.test(n)&&rank(n)>0).sort((a,b)=>rank(b)-rank(a)||ver(b)-ver(a));
+  if(!cands.length) throw new Error('No Gemini Flash model is available on this key');
+  return cands[0];
+}
+function parseJSON(t){ t=String(t||'').replace(/```(?:json)?/g,''); const a=t.indexOf('{'),b=t.lastIndexOf('}'); if(a<0||b<a) throw new Error('The AI reply was not readable'); return JSON.parse(t.slice(a,b+1)); }
+async function readScreenshot(file){
+  const {prov,key}=ai(); if(!key) throw new Error('Connect an AI key first');
+  const {data,mime}=await encodeImage(file);
+  if(prov==='claude'){
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:db.settings.claudeModel||'claude-sonnet-5-5',max_tokens:4000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data}},{type:'text',text:PROMPT}]}]})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(r.status===401?'That Claude key was rejected':j.error?.message||`Claude error ${r.status}`);
+    return parseJSON((j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''));
+  }
+  for(let attempt=0;attempt<2;attempt++){
+    if(!db.settings.geminiModel){db.settings.geminiModel=await geminiPickModel(key);save();}
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${db.settings.geminiModel}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({contents:[{role:'user',parts:[{inline_data:{mime_type:mime,data}},{text:PROMPT}]}],generationConfig:{responseMimeType:'application/json',temperature:0.1}})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok){const parts=j.candidates?.[0]?.content?.parts||[];return parseJSON(parts.filter(p=>!p.thought&&p.text).map(p=>p.text).join(''));}
+    if((r.status===404||(r.status===400&&/model/i.test(j.error?.message||'')))&&attempt===0){db.settings.geminiModel='';continue;}
+    if(r.status===429) throw new Error('Gemini free limit hit. Wait a minute and try again.');
+    throw new Error(j.error?.message||`Gemini error ${r.status}`);
+  }
+}
+function encodeImage(file){
+  return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{
+    const s=Math.min(1,2200/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);res({data:c.toDataURL('image/jpeg',.9).split(',')[1],mime:'image/jpeg'});URL.revokeObjectURL(img.src);};
+    img.onerror=()=>rej(new Error('Could not open that image'));img.src=URL.createObjectURL(file);});
+}
+function renderAI(){
+  const {prov,key}=ai();
+  $('#aiSetup').classList.toggle('hidden',!!key);
+  $('#prov').value=prov; $('#key').value=key;
+  $('#aiInfo').innerHTML=key?`<span class="ai-ok" style="display:inline-flex"><span class="dotlive"></span>Connected to ${prov==='claude'?'Claude ('+esc(db.settings.claudeModel||'claude-sonnet-5-5')+')':'Gemini'+(db.settings.geminiModel?' ('+esc(db.settings.geminiModel)+')':'')}</span>`:'Not connected. Get a free Gemini key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.';
+}
+async function saveKey(prov,key,btn){
+  key=key.trim(); if(!key) return toast('Paste a key first');
+  const old=btn.innerHTML; btn.innerHTML='<span class="spin"></span>'; btn.disabled=true;
+  try{
+    if(prov==='gemini'){db.settings.geminiModel=await geminiPickModel(key);}
+    db.settings.aiProvider=prov; db.settings.aiKey=key; save(); renderAI(); updScan(); toast('AI reader connected');
+  }catch(e){toast(e.message);}
+  finally{btn.innerHTML=old;btn.disabled=false;}
+}
+$('#setupSave').onclick=e=>saveKey('gemini',$('#setupKey').value,e.currentTarget);
+$('#keySave').onclick=e=>saveKey($('#prov').value,$('#key').value,e.currentTarget);
+$('#keyClear').onclick=()=>{delete db.settings.aiKey;delete db.settings.geminiModel;save();renderAI();updScan();toast('Key removed');};
+
+/* =================== import =================== */
+let shots=[], cands=[], merged=0, lastPlatform=null;
 function renderImportAcct(){
   const cur=$('#impAcct').value;
-  $('#impAcct').innerHTML = db.accounts.length
-    ? '<option value="">Choose an account…</option>'+db.accounts.map(a=>`<option value="${a.id}">${esc(acctLabel(a))}${a.email?' ('+esc(maskEmail(a.email))+')':''}</option>`).join('')
-    : '<option value="">No accounts yet — add one →</option>';
-  if(db.accounts.some(a=>a.id===cur)) $('#impAcct').value=cur;
+  $('#impAcct').innerHTML=db.accounts.length?'<option value="">Choose an account…</option>'+db.accounts.map(a=>`<option value="${a.id}">${esc(acctLabel(a))}${a.email?' — '+esc(maskEmail(a.email)):''}</option>`).join(''):'<option value="">No accounts yet</option>';
+  if(db.accounts.some(a=>a.id===cur)) $('#impAcct').value=cur; else if(db.accounts.length===1) $('#impAcct').value=db.accounts[0].id;
   if(!db.accounts.length) $('#impNewAcct').classList.remove('hidden');
 }
-$('#impAcct').onchange = ()=>{ updateScanBtn(); markOwned(); };
-function updateScanBtn(){ $('#scanBtn').disabled = !shots.length || !$('#impAcct').value;
-  $('#scanStatus').textContent = !$('#impAcct').value ? 'Pick an account first' : !shots.length ? 'Add at least one screenshot' : `${shots.length} screenshot${shots.length>1?'s':''} ready`; }
-function addFiles(files){
-  for(const f of files){ if(!f.type.startsWith('image/')) continue; shots.push({id:uid(),file:f,url:URL.createObjectURL(f)}); }
-  renderThumbs();
+$('#impAcct').onchange=()=>{updScan();renderCands();};
+function updScan(){
+  const acct=$('#impAcct').value, key=ai().key;
+  $('#scanBtn').disabled=!shots.length||!acct||!key||scanning;
+  if(!scanning) $('#scanStatus').textContent=!key?'Connect the AI reader above first':!acct?'Pick an account first':!shots.length?'Add a screenshot':`${shots.length} screenshot${shots.length>1?'s':''} ready`;
 }
-function renderThumbs(){
-  $('#thumbs').innerHTML = shots.map(s=>`<div class="thumb"><img src="${s.url}" alt=""><button data-id="${s.id}" title="Remove">×</button></div>`).join('');
-  updateScanBtn();
-}
-$('#thumbs').onclick = e=>{ const id=e.target.dataset.id; if(!id) return; shots=shots.filter(s=>s.id!==id); renderThumbs(); };
+function addFiles(fs){for(const f of fs){if(f&&f.type.startsWith('image/'))shots.push({id:uid(),file:f,url:URL.createObjectURL(f),state:''});}renderThumbs();}
+function renderThumbs(){$('#thumbs').innerHTML=shots.map(s=>`<div class="thumb ${s.state}"><img src="${s.url}" alt=""><button data-id="${s.id}" title="Remove">×</button></div>`).join('');updScan();}
+$('#thumbs').onclick=e=>{const id=e.target.dataset.id;if(!id||scanning)return;shots=shots.filter(s=>s.id!==id);renderThumbs();};
 const drop=$('#drop');
-drop.onclick = ()=>$('#file').click();
-$('#file').onchange = e=>{ addFiles(e.target.files); e.target.value=''; };
-drop.ondragover = e=>{e.preventDefault();drop.classList.add('over')};
-drop.ondragleave = ()=>drop.classList.remove('over');
-drop.ondrop = e=>{e.preventDefault();drop.classList.remove('over');addFiles(e.dataTransfer.files)};
-document.addEventListener('paste',e=>{
-  const imgs=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile());
-  if(imgs.length){ if(!$('#import').classList.contains('on')) show('import'); addFiles(imgs); toast('Screenshot pasted'); }
-});
+drop.onclick=()=>$('#file').click();
+$('#file').onchange=e=>{addFiles(e.target.files);e.target.value='';};
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');};
+drop.ondragleave=()=>drop.classList.remove('over');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');addFiles(e.dataTransfer.files);};
+document.addEventListener('paste',e=>{if(e.target.matches('input,textarea'))return;const imgs=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith('image/')).map(i=>i.getAsFile());
+  if(imgs.length){if(!$('#import').classList.contains('on'))show('import');addFiles(imgs);toast('Screenshot pasted');}});
 
-/* Make screenshots easier to read: upscale, greyscale, flip dark themes to dark-text-on-light */
-function prep(file){
-  return new Promise((res,rej)=>{
-    const img=new Image();
-    img.onload=()=>{
-      const scale = Math.min(3, Math.max(1, 1800/img.width));
-      const c=document.createElement('canvas'); c.width=img.width*scale; c.height=img.height*scale;
-      const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,c.width,c.height);
-      const d=x.getImageData(0,0,c.width,c.height), p=d.data; let sum=0;
-      for(let i=0;i<p.length;i+=4){ const l=.299*p[i]+.587*p[i+1]+.114*p[i+2]; p[i]=p[i+1]=p[i+2]=l; sum+=l; }
-      const dark = sum/(p.length/4) < 128;
-      for(let i=0;i<p.length;i+=4){ let l=p[i]; if(dark) l=255-l; l=Math.max(0,Math.min(255,(l-128)*1.6+128)); p[i]=p[i+1]=p[i+2]=l; }
-      x.putImageData(d,0,0); res(c);
-    };
-    img.onerror=rej; img.src=URL.createObjectURL(file);
-  });
-}
-
-/* Turn OCR lines into likely game titles */
-const UI_WORDS = new Set(('library store home community friends download downloads installed install uninstall play update launch settings search sort filter '+
-  'games game all recent collections collection favorites favourites apps news wishlist cart profile achievements cloud owned manage more view grid list '+
-  'ready to play not installed hours played last played see all add a game playtime size status purchased date title name a-z az '+
-  'shop discover browse deals free games my library xbox steam epic gog playstation nintendo ps5 ps4 pc console sign in menu back next '+
-  'continue options help support account properties uninstalled queue paused completed').split(' '));
-const UI_PHRASES = /^(ready to play|not installed|last played|hours played|see all|add a game|sort by|filter by|all games|my library|show all|recently played|play time|time played|installed games|game library|your library|playtime|downloads|manage downloads|shared libraries|what's new)\b/i;
-function cleanLine(raw){
-  let t = raw.replace(/[|•·●►▶▷◆■□✓✔︎★☆…_~`]/g,' ').replace(/\s+/g,' ').trim();
-  for(let i=0;i<4;i++){
-    t = t.replace(/\s+(installed|install|play|update|launch|download|uninstall|ready|new|owned|\d+(\.\d+)?\s*(gb|mb|kb|hrs?|hours?|mins?|minutes?|h|m|%)|\d{1,3}%|\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4})$/i,'').trim();
+let scanning=false;
+$('#scanBtn').onclick=async()=>{
+  scanning=true; updScan(); const st=$('#scanStatus'); let found=0, failed=0;
+  for(let i=0;i<shots.length;i++){
+    const s=shots[i]; if(s.state==='done') continue;
+    s.state='busy'; renderThumbs(); st.innerHTML=`<span class="spin" style="vertical-align:-3px"></span>&nbsp; Reading screenshot ${i+1} of ${shots.length}…`;
+    try{
+      const res=await readScreenshot(s.file);
+      if(res.platform&&res.platform!=='unknown') lastPlatform=res.platform;
+      found+=mergeCands((res.games||[]).map(g=>({title:String(g.title||'').trim(),conf:typeof g.confidence==='number'?g.confidence:null,appid:Number(g.steam_appid)||null})));
+      s.state='done';
+    }catch(err){ s.state=''; failed++; toast(err.message); console.error(err); if(/key|limit/i.test(err.message)) break; }
+    renderThumbs();
   }
-  t = t.replace(/^[^\p{L}\p{N}]+/u,'').replace(/[^\p{L}\p{N}!?)\]'’]+$/u,'').trim();
-  return t;
-}
-function looksLikeTitle(t){
-  if(t.length<2 || t.length>90) return false;
-  const letters=(t.match(/\p{L}/gu)||[]).length;
-  if(letters<2 || letters/t.replace(/\s/g,'').length < .5) return false;
-  if(UI_WORDS.has(t.toLowerCase()) || UI_PHRASES.test(t)) return false;
-  const words=t.toLowerCase().replace(/\(\d+\)/g,'').split(/\s+/).filter(Boolean);
-  if(words.length && words.every(w=>UI_WORDS.has(w))) return false; // e.g. "LIBRARY STORE COMMUNITY" menu bars
-  if(/^(\d+(\.\d+)?\s*(hrs?|hours?|mins?|gb|mb)|last played.*|played.*ago|\d+ (games|items|results))$/i.test(t)) return false;
-  if(/^[a-z]/.test(t) && t.split(' ').length>6) return false; // sentences, not titles
-  return true;
-}
-function parseLines(lines){ // lines: [{text,confidence}]
-  const out=[], seen=new Set();
-  for(const l of lines){
-    const t=cleanLine(l.text||''); if(!looksLikeTitle(t)) continue;
-    const k=norm(t); if(!k||seen.has(k)) continue; seen.add(k);
-    out.push({title:t, conf: l.confidence==null?null:Math.round(l.confidence)});
-  }
-  return out;
-}
-
-let worker=null, cands=[];
-async function getWorker(log){
-  if(worker) return worker;
-  if(!window.Tesseract) throw new Error('The text reader didn\'t load — check your internet connection and refresh.');
-  worker = await Tesseract.createWorker('eng',1,{logger:log});
-  await worker.setParameters({preserve_interword_spaces:'1'});
-  return worker;
-}
-$('#scanBtn').onclick = async ()=>{
-  const btn=$('#scanBtn'), status=$('#scanStatus'), bar=$('#prog'), fill=bar.querySelector('i');
-  btn.disabled=true; bar.style.display='block'; fill.style.width='0%';
-  const found=[];
-  try{
-    let i=0;
-    const w = await getWorker(m=>{ if(m.status==='recognizing text') fill.style.width=((i+m.progress)/shots.length*100)+'%'; else status.textContent = m.status==='loading language traineddata'?'Downloading text reader (first time only)…':'Starting text reader…'; });
-    for(; i<shots.length; i++){
-      status.textContent=`Reading screenshot ${i+1} of ${shots.length}…`;
-      const canvas = await prep(shots[i].file);
-      const {data} = await w.recognize(canvas);
-      const lines = data.lines?.length ? data.lines : (data.text||'').split('\n').map(text=>({text,confidence:null}));
-      found.push(...lines);
-    }
-    fill.style.width='100%';
-    const parsed = parseLines(found);
-    mergeCands(parsed);
-    status.textContent = `Found ${parsed.length} possible game${parsed.length===1?'':'s'}`;
-    shots=[]; renderThumbs();
-  }catch(err){ console.error(err); status.textContent = err.message||'Something went wrong reading that image'; toast('Scan failed'); }
-  finally{ setTimeout(()=>bar.style.display='none',600); updateScanBtn(); if(cands.length) status.textContent = `${cands.length} possible game${cands.length===1?'':'s'} to review below`; }
+  scanning=false;
+  shots=shots.filter(s=>s.state!=='done'); renderThumbs();
+  updScan();
+  st.textContent=failed?`${failed} screenshot${failed>1?'s':''} couldn't be read`:`Found ${found} new game${found===1?'':'s'}`;
 };
-$('#pasteBtn').onclick = ()=>{
-  const lines=$('#pasteList').value.split('\n').map(text=>({text,confidence:100}));
-  const parsed=lines.map(l=>({title:cleanLine(l.text),conf:null})).filter(x=>x.title.length>=1);
-  if(!parsed.length) return toast('Paste at least one title');
-  mergeCands(parsed); $('#pasteList').value='';
-};
+$('#pasteBtn').onclick=()=>{const ls=$('#pasteList').value.split('\n').map(t=>t.trim()).filter(Boolean);if(!ls.length)return toast('Type at least one title');mergeCands(ls.map(title=>({title,conf:null})));$('#pasteList').value='';};
 function mergeCands(list){
-  const have=new Set(cands.map(c=>norm(c.title)));
-  for(const p of list){ const k=norm(p.title); if(have.has(k)) continue; have.add(k);
-    cands.push({id:uid(),title:p.title,conf:p.conf,on: p.conf==null || p.conf>=65}); }
-  renderCands(); $('#reviewPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  const have=new Set(cands.map(c=>norm(c.title))); let added=0;
+  for(const p of list){ const k=norm(p.title); if(!k) continue;
+    if(have.has(k)){ merged++; continue; } have.add(k);
+    cands.push({id:uid(),title:p.title,conf:p.conf,appid:p.appid,on:p.conf==null||p.conf>=0.55}); added++;
+    wantCover(k,p.title,p.appid);
+  }
+  renderCands(); if(added) $('#reviewPanel').scrollIntoView({behavior:'smooth',block:'start'});
+  return added;
 }
+function ownedSet(){const acct=$('#impAcct').value;return new Set(db.games.filter(g=>g.accountId===acct).map(g=>norm(g.title)));}
 function renderCands(){
-  $('#reviewPanel').classList.toggle('hidden',!cands.length);
-  $('#cands').innerHTML = cands.map(c=>{
-    const cls = c.conf==null?'':c.conf>=80?'hi':c.conf>=65?'mid':'lo';
-    return `<div class="cand" data-id="${c.id}">
-      <input type="checkbox" ${c.on?'checked':''} aria-label="Include">
-      <input type="text" value="${esc(c.title)}" aria-label="Title">
-      <span class="owned"></span>
-      ${c.conf==null?'':`<span class="conf ${cls}" title="How sure the reader was">${c.conf}%</span>`}
-    </div>`;}).join('');
-  markOwned();
+  $('#reviewPanel').classList.toggle('hidden',!cands.length); if(!cands.length) return;
+  const owned=ownedSet(), acct=acctById($('#impAcct').value);
+  const notes=[];
+  if(merged) notes.push(`<div class="notice">Merged ${merged} duplicate${merged===1?'':'s'}: the same game showed up more than once across your screenshots.</div>`);
+  if(lastPlatform&&acct&&SOURCES[lastPlatform]&&acct.source!==lastPlatform&&acct.source!=='other') notes.push(`<div class="notice warn">This looks like a <b>${SOURCES[lastPlatform].name}</b> screenshot, but you picked a <b>${esc(srcName(acct))}</b> account. Change the account in step 1 if that's wrong.</div>`);
+  $('#reviewNotes').innerHTML=notes.join('');
+  $('#cands').innerHTML=cands.map(c=>{const k=norm(c.title);const isOwned=owned.has(k);
+    return `<div class="cand ${c.on&&!isOwned?'':'off'}" data-id="${c.id}">
+      <div class="cover" data-cover="${esc(k)}" data-title="${esc(c.title)}">${coverHTML(k,c.title)}
+        ${isOwned?'<span class="flag owned">Already added</span>':c.conf!=null&&c.conf<0.55?'<span class="flag low">Not sure</span>':''}
+        <span class="tick">✓</span></div>
+      <input value="${esc(c.title)}" aria-label="Title"></div>`;}).join('');
+  const n=cands.filter(c=>c.on&&!owned.has(norm(c.title))).length;
+  $('#addInfo').textContent=`${n} game${n===1?'':'s'} selected`;
+  $('#addSel').disabled=!n;
 }
-function markOwned(){
-  const acct=$('#impAcct').value;
-  const owned=new Set(db.games.filter(g=>g.accountId===acct).map(g=>norm(g.title)));
-  document.querySelectorAll('.cand').forEach(row=>{
-    const c=cands.find(x=>x.id===row.dataset.id); if(!c) return;
-    row.querySelector('.owned').textContent = acct && owned.has(norm(c.title)) ? 'already on this account' : '';
-  });
-}
-$('#cands').addEventListener('input',e=>{
-  const row=e.target.closest('.cand'); const c=cands.find(x=>x.id===row.dataset.id);
-  if(e.target.type==='checkbox') c.on=e.target.checked; else { c.title=e.target.value; markOwned(); }
-});
+$('#cands').addEventListener('click',e=>{const cv=e.target.closest('.cover');if(!cv)return;const c=cands.find(x=>x.id===cv.closest('.cand').dataset.id);
+  if(ownedSet().has(norm(c.title)))return toast('Already on this account');c.on=!c.on;renderCands();});
+$('#cands').addEventListener('change',e=>{const row=e.target.closest('.cand');if(!row)return;const c=cands.find(x=>x.id===row.dataset.id);const t=e.target.value.trim();if(!t)return;
+  const k=norm(t); if(cands.some(x=>x!==c&&norm(x.title)===k)){toast('That game is already in the list');cands=cands.filter(x=>x!==c);merged++;renderCands();return;}
+  c.title=t;c.appid=null;wantCover(k,t);renderCands();});
 $('#selAll').onclick=()=>{cands.forEach(c=>c.on=true);renderCands();};
 $('#selNone').onclick=()=>{cands.forEach(c=>c.on=false);renderCands();};
-$('#addSel').onclick = ()=>{
-  const acct=$('#impAcct').value; if(!acct) return toast('Pick which account these are from');
-  const owned=new Set(db.games.filter(g=>g.accountId===acct).map(g=>norm(g.title)));
-  let added=0, skipped=0;
-  for(const c of cands.filter(c=>c.on)){
-    const t=c.title.trim(); if(!t) continue;
-    if(owned.has(norm(t))){ skipped++; continue; }
-    owned.add(norm(t)); db.games.push({id:uid(),title:t,accountId:acct,added:Date.now()}); added++;
-  }
-  if(!added && !skipped) return toast('Nothing selected');
-  save(); cands=cands.filter(c=>!c.on); renderCands(); render();
-  toast(`Added ${added} game${added===1?'':'s'}${skipped?` · ${skipped} already there`:''}`);
+$('#clearCands').onclick=()=>{cands=[];merged=0;lastPlatform=null;renderCands();};
+$('#addSel').onclick=()=>{
+  const acct=$('#impAcct').value;if(!acct)return toast('Pick which account these are from');
+  const owned=ownedSet();let added=0;
+  for(const c of cands.filter(c=>c.on)){const k=norm(c.title);if(owned.has(k))continue;owned.add(k);db.games.push({id:uid(),title:c.title.trim(),accountId:acct,added:Date.now()});if(c.appid&&!meta(k).appid)meta(k).appid=c.appid;added++;}
+  save(); cands=cands.filter(c=>!c.on); if(!cands.length){merged=0;lastPlatform=null;} renderCands(); render();
+  toast(`Added ${added} game${added===1?'':'s'} to ${acctLabel(acctById(acct))}`);
+  if(!cands.length) show('library');
 };
 
-/* ---------- backup ---------- */
-function download(name,text,type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+/* =================== settings / backup =================== */
+$('#refetch').onclick=()=>{let n=0;for(const k in db.meta){if(db.meta[k].cover===null){delete db.meta[k].cover;n++;}}save();render();toast(n?`Looking for ${n} cover${n===1?'':'s'}…`:'Every game already has a cover');};
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 const stamp=()=>new Date().toISOString().slice(0,10);
-$('#expBtn').onclick=()=>download(`gamevault-backup-${stamp()}.json`,JSON.stringify(db,null,2),'application/json');
-$('#expCsv').onclick=()=>{
-  const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
-  const rows=[['Title','Source','Username','Email','Status','Added']].concat(db.games.map(g=>{const a=acctById(g.accountId)||{};
-    return [g.title,a.source?srcName(a):'',a.username,a.email,STATUSES[db.meta[norm(g.title)]?.status||'backlog'],new Date(g.added).toISOString().slice(0,10)];}));
-  download(`gamevault-games-${stamp()}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
-};
+$('#expBtn').onclick=()=>{const {aiKey,...settings}=db.settings;download(`gamevault-backup-${stamp()}.json`,JSON.stringify({...db,settings},null,2),'application/json');};
+$('#expCsv').onclick=()=>{const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+  const rows=[['Title','Source','Username','Email','Status','Added']].concat(db.games.map(g=>{const a=acctById(g.accountId)||{};return[g.title,a.source?srcName(a):'',a.username,a.email,STATUSES[statusOf(norm(g.title))],new Date(g.added).toISOString().slice(0,10)];}));
+  download(`gamevault-games-${stamp()}.csv`,rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');};
 $('#impBtn').onclick=()=>$('#impFile').click();
-$('#impFile').onchange=async e=>{
-  const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{
-    const d=JSON.parse(await f.text());
-    if(!Array.isArray(d.accounts)||!Array.isArray(d.games)) throw 0;
-    if(db.games.length && !confirm('Replace your current library with this backup?')) return;
-    db={meta:{},settings:{},...d}; save(); render(); toast(`Restored ${d.games.length} games`);
-  }catch(_){ toast('That file isn\'t a Game Vault backup'); }
-};
-$('#wipe').onclick=()=>{ if(!confirm('Delete all accounts and games from this browser? Download a backup first if you might want them back.')) return;
-  db={accounts:[],games:[],meta:{},settings:{}}; save(); render(); toast('Everything deleted'); };
+$('#impFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{const d=JSON.parse(await f.text());if(!Array.isArray(d.accounts)||!Array.isArray(d.games))throw 0;
+    if(db.games.length&&!confirm('Replace your current library with this backup?'))return;
+    const keep={aiKey:db.settings.aiKey,aiProvider:db.settings.aiProvider,geminiModel:db.settings.geminiModel};
+    db={meta:{},...d,settings:{...(d.settings||{}),...keep}};save();render();toast(`Restored ${d.games.length} games`);}
+  catch(_){toast("That file isn't a Game Vault backup");}};
+$('#wipe').onclick=()=>{if(!confirm('Delete all accounts and games from this browser? Download a backup first if you might want them back.'))return;
+  db={accounts:[],games:[],meta:{},settings:{aiKey:db.settings.aiKey,aiProvider:db.settings.aiProvider,geminiModel:db.settings.geminiModel}};save();render();toast('Everything deleted');};
 
-/* ---------- go ---------- */
-function render(){ renderFilters(); renderLibrary(); renderAccounts(); renderImportAcct(); updateScanBtn(); }
+/* =================== go =================== */
+// one-time cleanup of junk from the old text-reader version: drop stale "pending" flags
+for(const k in db.meta) delete db.meta[k].coverPending;
+function render(){renderLibrary();renderAccounts();renderImportAcct();renderAI();renderCands();updScan();}
 render();
 </script>
 </body>
