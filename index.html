@@ -443,43 +443,50 @@ function pumpCovers(){
 /* Find the game's Wikipedia article (using the release year to pick the right one when
    several games share a name), then its verified Steam ID from Wikidata.
    Returns a list of image URLs to try in order, or null. */
+async function wikiQuery(params){
+  const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=pageimages|description|pageprops&ppprop=wikibase_item|disambiguation&piprop=thumbnail&pithumbsize=600&pilicense=any&'+params;
+  const j=await (await fetch(u)).json();
+  return Object.values(j.query?.pages||{}).filter(p=>!('missing' in p)&&!('disambiguation' in (p.pageprops||{})));
+}
+function scorePage(p,want,year){
+  const pt=norm(p.title.replace(/\(.*?\)/g,'')), d=(p.description||'').toLowerCase(), paren=(p.title.match(/\((.*?)\)/)||[])[1]||'';
+  let s=0;
+  if(pt===want) s+=4;
+  else if(pt.length>=6 && want.startsWith(pt)) s+=2.5;            // "World War Z: Aftermath" → "World War Z"
+  else if(want.length>=6 && pt.startsWith(want)) s+=1.5;
+  else s-=3;
+  if(/video game|\bgame\b/.test(d+' '+paren)) s+=3;
+  if(/series|franchise|character|film|novel|album|soundtrack|company|developer|studio|engine|person|actor|book|tv/.test(d)) s-=4;
+  if(year){ const ys=(d+' '+paren).match(/\b(19|20)\d\d\b/g)||[];
+    if(ys.includes(String(year))) s+=3; else if(ys.length && pt===want) s-=2.5; }
+  return s-(p.index||0)*.05;
+}
+/* Find the game's Wikipedia article, then its verified Steam ID from Wikidata.
+   Returns a list of image URLs to try in order, or null. */
 async function findCover(title,appid,year){
-  const want=norm(title); let wiki=null, steam=null;
+  const want=norm(title), base=title.split(/\s*[:–—]\s*|\s+-\s+/)[0].trim();
+  let best=null,bs=-99;
+  const consider=pages=>pages.forEach(p=>{const sc=scorePage(p,want,year); if(sc>bs){bs=sc;best=p;}});
   try{
-    const q=`${title}${year?' '+year:''} video game`;
-    const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&generator=search&gsrlimit=8&gsrsearch='+encodeURIComponent(q)+
-      '&prop=pageimages|description|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=600&pilicense=any';
-    const j=await (await fetch(u)).json();
-    let best=null,bs=-99;
-    for(const p of Object.values(j.query?.pages||{})){
-      const pt=norm(p.title.replace(/\(.*?\)/g,'')), d=(p.description||'').toLowerCase(), paren=(p.title.match(/\((.*?)\)/)||[])[1]||'';
-      let s=0;
-      if(pt===want) s+=4;
-      else if(pt.length>=6 && want.startsWith(pt)) s+=2.5;          // "World War Z: Aftermath" → "World War Z"
-      else if(want.length>=6 && pt.startsWith(want)) s+=1.5;
-      else s-=3;
-      if(/video game|\bgame\b/.test(d+' '+paren)) s+=3;
-      if(/series|franchise|character|film|novel|album|soundtrack|company|developer|studio|engine|person|actor|book|tv/.test(d)) s-=4;
-      if(year){ const ys=(d+' '+paren).match(/\b(19|20)\d\d\b/g)||[];
-        if(ys.includes(String(year))) s+=3; else if(ys.length && pt===want) s-=2.5; }  // editions/re-releases keep their base game's article
-      s-=(p.index||0)*.05;
-      if(s>bs){bs=s;best=p;}
-    }
-    if(best && bs>=4.5){
-      wiki=best;
-      const qid=best.pageprops?.wikibase_item;
-      if(qid){
-        const w=await (await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).json();
-        const cl=w.entities?.[qid]?.claims?.P1733||[];
-        const pref=cl.find(c=>c.rank==='preferred')||cl.find(c=>c.rank!=='deprecated');
-        steam=pref?.mainsnak?.datavalue?.value||null;
-      }
-    }
+    // 1. exact page names (Wikipedia redirects editions to the main game)
+    const names=[...new Set([title,`${title} (video game)`,year&&`${title} (${year} video game)`,base!==title&&base].filter(Boolean))];
+    consider(await wikiQuery('titles='+encodeURIComponent(names.join('|'))));
+    // 2. full-text search, with and without the year
+    if(bs<6) consider(await wikiQuery('generator=search&gsrlimit=8&gsrsearch='+encodeURIComponent(`${title}${year?' '+year:''} video game`)));
+    if(bs<4.5 && base!==title) consider(await wikiQuery('generator=search&gsrlimit=8&gsrsearch='+encodeURIComponent(`${base} video game`)));
   }catch(e){}
+  let steam=null, wiki=bs>=4.5?best:null;
+  if(wiki?.pageprops?.wikibase_item){
+    try{ const qid=wiki.pageprops.wikibase_item;
+      const w=await (await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).json();
+      const cl=w.entities?.[qid]?.claims?.P1733||[];
+      const pref=cl.find(c=>c.rank==='preferred')||cl.find(c=>c.rank!=='deprecated');
+      steam=pref?.mainsnak?.datavalue?.value||null; }catch(e){}
+  }
   const out=[];
   if(steam) out.push(...steamArt(steam));
   if(wiki?.thumbnail) out.push(wiki.thumbnail.source);
-  if(!out.length && appid) out.push(...steamArt(appid));   // the AI's guess, only if nothing verified was found
+  if(appid && String(appid)!==String(steam)) out.push(...steamArt(appid));   // the AI's guess, tried last
   return out.length?out:null;
 }
 const steamArt=id=>[`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/library_600x900_2x.jpg`,`https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/library_600x900_2x.jpg`];
@@ -593,7 +600,7 @@ function openGame(key){
   $('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
   $('#mx').onclick=closeModal;
   $('#mSeg').onclick=e=>{const s=e.target.dataset.s;if(!s)return;meta(key).status=s;save();openGame(key);renderLibrary();};
-  $('#mOwn').onclick=e=>{const aid=e.target.dataset.del;if(!aid)return;db.games=db.games.filter(x=>!(x.accountId===aid&&(norm(x.title)||x.title.toLowerCase())===key));save();renderLibrary();openGame(key);toast('Removed from that account');};
+  $('#mOwn').onclick=e=>{const aid=e.target.dataset.del;if(!aid)return;db.games=db.games.filter(x=>!(x.accountId===aid&&(norm(x.title)||x.title.toLowerCase())===key));save();renderLibrary();renderCands();openGame(key);toast('Removed from that account');};
   $('#mDelete').onclick=()=>{if(!confirm(`Delete ${g.title} from every account?`))return;db.games=db.games.filter(x=>(norm(x.title)||x.title.toLowerCase())!==key);save();closeModal();render();toast('Game deleted');};
   $('#mRename').onclick=()=>{const t=prompt('Game title',g.title);if(!t||!t.trim())return;const nk=norm(t);
     g.copies.forEach(c=>c.title=t.trim()); if(nk!==key){db.meta[nk]={...(db.meta[key]||{}),...(db.meta[nk]||{}),cover:db.meta[nk]?.cover};if(db.meta[nk].cover===undefined)delete db.meta[nk].cover;}
@@ -672,7 +679,7 @@ Rules:
 Reply with JSON only, in this shape:
 {"platform":"steam|epic|gog|xbox|playstation|nintendo|ea|ubisoft|battlenet|amazon|itch|rockstar|other|unknown","games":[{"title":"...","year":number or null,"confidence":0.0-1.0,"steam_appid":number or null}]}
 "year" is the original release year of the exact game shown. When several games share a name (e.g. Star Wars Battlefront II 2005 vs 2017), use the cover art and the store to decide which one it is.
-steam_appid only if you are certain of it, otherwise null.`;
+steam_appid: the game's Steam app ID if it is sold on Steam and you know it, otherwise null.`;
 
 const ai=()=>({prov:db.settings.aiProvider||'claude',key:db.settings.aiKey||''});
 async function geminiPickModel(key){
@@ -809,14 +816,14 @@ function renderCands(){
   $('#cands').innerHTML=cands.map(c=>{const k=norm(c.title);const isOwned=owned.has(k);
     return `<div class="cand ${c.on&&!isOwned?'':'off'}" data-id="${c.id}">
       <div class="cover" data-cover="${esc(k)}" data-title="${esc(c.title)}">${coverHTML(k,c.title)}
-        ${isOwned?'<span class="flag owned">Already added</span>':c.conf!=null&&c.conf<0.55?'<span class="flag low">Not sure</span>':''}
+        ${isOwned?'<span class="flag owned" data-open="'+esc(k)+'" style="cursor:pointer" title="Show it in your library">Already added ›</span>':c.conf!=null&&c.conf<0.55?'<span class="flag low">Not sure</span>':''}
         <span class="tick">✓</span></div>
       <input value="${esc(c.title)}" aria-label="Title"></div>`;}).join('');
   const n=cands.filter(c=>c.on&&!owned.has(norm(c.title))).length;
   $('#addInfo').textContent=`${n} game${n===1?'':'s'} selected`;
   $('#addSel').disabled=!n;
 }
-$('#cands').addEventListener('click',e=>{const cv=e.target.closest('.cover');if(!cv)return;const c=cands.find(x=>x.id===cv.closest('.cand').dataset.id);
+$('#cands').addEventListener('click',e=>{const op=e.target.closest('[data-open]');if(op){openGame(op.dataset.open);return;}const cv=e.target.closest('.cover');if(!cv)return;const c=cands.find(x=>x.id===cv.closest('.cand').dataset.id);
   if(ownedSet().has(norm(c.title)))return toast('Already on this account');c.on=!c.on;renderCands();});
 $('#cands').addEventListener('change',e=>{const row=e.target.closest('.cand');if(!row)return;const c=cands.find(x=>x.id===row.dataset.id);const t=e.target.value.trim();if(!t)return;
   const k=norm(t); if(cands.some(x=>x!==c&&norm(x.title)===k)){toast('That game is already in the list');cands=cands.filter(x=>x!==c);merged++;renderCands();return;}
@@ -857,7 +864,7 @@ for(const k in db.meta) delete db.meta[k].coverPending;
 // one copy per game per account (older versions could add the same game twice to one account)
 (()=>{const seen=new Set(),before=db.games.length;db.games=db.games.filter(g=>{const id=g.accountId+'|'+(norm(g.title)||g.title.toLowerCase());if(seen.has(id))return false;seen.add(id);return true;});
   // covers v3: re-look-up every automatic cover once with the better matcher
-  if(db.settings.coverV!==3){for(const k in db.meta){if(!db.meta[k].coverCustom)delete db.meta[k].cover;}db.settings.coverV=3;}
+  if(db.settings.coverV!==4){for(const k in db.meta){if(!db.meta[k].coverCustom)delete db.meta[k].cover;}db.settings.coverV=4;}
   save();})();
 // keep tabs in sync: changes made in another tab show up here too
 addEventListener('storage',e=>{if(e.key===KEY){db=load();render();}});
