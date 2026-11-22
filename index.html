@@ -424,45 +424,69 @@ $('#naSource').onchange=()=>$('#naCustomWrap').classList.toggle('hidden',$('#naS
 
 /* =================== covers =================== */
 const coverQueue=[]; let coverActive=0;
-function wantCover(key,title,appid){
+function wantCover(key,title,appid,year){
   const m=meta(key);
   if(appid && !m.appid) m.appid=appid;
+  if(year && !m.year) m.year=year;
   if(m.cover!==undefined || m.coverPending) return;
   m.coverPending=true; coverQueue.push({key,title}); pumpCovers();
 }
 function pumpCovers(){
   while(coverActive<3 && coverQueue.length){
     const job=coverQueue.shift(); coverActive++;
-    findCover(job.title,meta(job.key).appid).then(url=>{ const m=meta(job.key); m.cover=url||null; delete m.coverPending; save(); paintCover(job.key); })
+    const m=meta(job.key);
+    findCover(job.title,m.appid,m.year).then(c=>{ const mm=meta(job.key); mm.cover=c; delete mm.coverPending; save(); paintCover(job.key); })
       .catch(()=>{ delete meta(job.key).coverPending; })
       .finally(()=>{ coverActive--; pumpCovers(); });
   }
 }
-async function findCover(title,appid){
+/* Find the game's Wikipedia article (using the release year to pick the right one when
+   several games share a name), then its verified Steam ID from Wikidata.
+   Returns a list of image URLs to try in order, or null. */
+async function findCover(title,appid,year){
+  const want=norm(title); let wiki=null, steam=null;
   try{
-    const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrlimit=6&gsrsearch='+encodeURIComponent(title+' video game')+
-      '&prop=pageimages|description&piprop=thumbnail&pithumbsize=500&pilicense=any';
+    const q=`${title}${year?' '+year:''} video game`;
+    const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&generator=search&gsrlimit=8&gsrsearch='+encodeURIComponent(q)+
+      '&prop=pageimages|description|pageprops&ppprop=wikibase_item&piprop=thumbnail&pithumbsize=600&pilicense=any';
     const j=await (await fetch(u)).json();
-    const want=norm(title);
-    const pages=Object.values(j.query?.pages||{}).filter(p=>p.thumbnail);
-    let best=null,bs=0;
-    for(const p of pages){
-      const pt=norm(p.title.replace(/\(.*?\)/g,'')), d=(p.description||'').toLowerCase();
+    let best=null,bs=-99;
+    for(const p of Object.values(j.query?.pages||{})){
+      const pt=norm(p.title.replace(/\(.*?\)/g,'')), d=(p.description||'').toLowerCase(), paren=(p.title.match(/\((.*?)\)/)||[])[1]||'';
       let s=0;
-      if(pt===want) s+=4; else if(want.length>3 && (pt.startsWith(want)||want.startsWith(pt))) s+=2;
-      if(/video game|game\b/.test(d)) s+=3;
-      if(/series|franchise|character|film|novel|album|soundtrack|company|developer|person|actor/.test(d)) s-=3;
-      s-=(p.index||0)*.1;
+      if(pt===want) s+=4;
+      else if(pt.length>=6 && want.startsWith(pt)) s+=2.5;          // "World War Z: Aftermath" → "World War Z"
+      else if(want.length>=6 && pt.startsWith(want)) s+=1.5;
+      else s-=3;
+      if(/video game|\bgame\b/.test(d+' '+paren)) s+=3;
+      if(/series|franchise|character|film|novel|album|soundtrack|company|developer|studio|engine|person|actor|book|tv/.test(d)) s-=4;
+      if(year){ const ys=(d+' '+paren).match(/\b(19|20)\d\d\b/g)||[];
+        if(ys.includes(String(year))) s+=3; else if(ys.length && pt===want) s-=2.5; }  // editions/re-releases keep their base game's article
+      s-=(p.index||0)*.05;
       if(s>bs){bs=s;best=p;}
     }
-    if(best && bs>=5) return best.thumbnail.source;
+    if(best && bs>=4.5){
+      wiki=best;
+      const qid=best.pageprops?.wikibase_item;
+      if(qid){
+        const w=await (await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`)).json();
+        const cl=w.entities?.[qid]?.claims?.P1733||[];
+        const pref=cl.find(c=>c.rank==='preferred')||cl.find(c=>c.rank!=='deprecated');
+        steam=pref?.mainsnak?.datavalue?.value||null;
+      }
+    }
   }catch(e){}
-  if(appid) return `steam:${appid}`;
-  return null;
+  const out=[];
+  if(steam) out.push(...steamArt(steam));
+  if(wiki?.thumbnail) out.push(wiki.thumbnail.source);
+  if(!out.length && appid) out.push(...steamArt(appid));   // the AI's guess, only if nothing verified was found
+  return out.length?out:null;
 }
+const steamArt=id=>[`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/library_600x900_2x.jpg`,`https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/library_600x900_2x.jpg`];
 function coverSrcs(c){
   if(!c) return [];
-  if(c.startsWith('steam:')){const id=c.slice(6);return[`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/library_600x900.jpg`,`https://cdn.cloudflare.steamstatic.com/steam/apps/${id}/header.jpg`];}
+  if(Array.isArray(c)) return c;
+  if(c.startsWith('steam:')) return steamArt(c.slice(6));
   return [c];
 }
 function coverHTML(key,title){
@@ -498,7 +522,8 @@ function renderLibrary(){
   const fa=$('#fAcct').value;
   $('#fAcct').innerHTML='<option value="">All accounts</option>'+db.accounts.map(a=>`<option value="${a.id}">${esc(acctLabel(a))}</option>`).join('');
   $('#fAcct').value=db.accounts.some(a=>a.id===fa)?fa:'';
-  const cnt={all:all.length,dupes:all.filter(g=>g.copies.length>1).length};
+  const nAcc=g=>new Set(g.copies.map(c=>c.accountId)).size;
+  const cnt={all:all.length,dupes:all.filter(g=>nAcc(g)>1).length};
   Object.keys(STATUSES).forEach(s=>cnt[s]=all.filter(g=>statusOf(g.key)===s).length);
   $('#pills').innerHTML=[['all','All'],...Object.entries(STATUSES).filter(([k])=>k!=='completed'),['dupes','Owned twice+']].filter(([k])=>k==='all'||cnt[k])
     .map(([k,v])=>`<button class="pill ${pill===k?'on':''}" data-p="${k}">${v}<span class="n">${cnt[k]}</span></button>`).join('');
@@ -506,9 +531,9 @@ function renderLibrary(){
   const q=norm($('#q').value), acc=$('#fAcct').value;
   let rows=all.filter(g=>(!q||g.key.includes(q)||g.title.toLowerCase().includes($('#q').value.toLowerCase().trim()))
     &&(!acc||g.copies.some(c=>c.accountId===acc))
-    &&(pill==='all'||(pill==='dupes'?g.copies.length>1:statusOf(g.key)===pill)));
+    &&(pill==='all'||(pill==='dupes'?nAcc(g)>1:statusOf(g.key)===pill)));
   const s=$('#fSort').value;
-  rows.sort((a,b)=>s==='new'?b.added-a.added:s==='copies'?b.copies.length-a.copies.length||a.title.localeCompare(b.title):a.title.localeCompare(b.title));
+  rows.sort((a,b)=>s==='new'?b.added-a.added:s==='copies'?new Set(b.copies.map(c=>c.accountId)).size-new Set(a.copies.map(c=>c.accountId)).size||a.title.localeCompare(b.title):a.title.localeCompare(b.title));
   window._rows=rows;
   $('#heroSub').textContent=db.games.length?`${all.length} game${all.length===1?'':'s'} across ${db.accounts.length} account${db.accounts.length===1?'':'s'}`:'Every game, every account, one place.';
 
@@ -520,7 +545,7 @@ function renderLibrary(){
     return `<button class="card ${selected.has(g.key)?'sel':''}" data-key="${esc(g.key)}">
       <div class="cover" data-cover="${esc(g.key)}" data-title="${esc(g.title)}">${coverHTML(g.key,g.title)}
         ${st!=='backlog'?`<span class="st ${st}">${STATUSES[st]}</span>`:''}
-        ${g.copies.length>1?`<span class="cnt">×${g.copies.length}</span>`:''}
+        ${accts.length>1?`<span class="cnt">×${accts.length}</span>`:''}
         <span class="srcs">${accts.slice(0,4).map(a=>badge(a)).join('')}</span>
         <span class="sel-box"></span>
       </div>
@@ -558,8 +583,8 @@ function openGame(key){
       <h2 id="mTitle">${esc(g.title)}</h2>
       <label class="l">Status</label>
       <div class="seg" id="mSeg">${Object.entries(STATUSES).map(([k,v])=>`<button data-s="${k}" class="${st===k?'on':''}">${v}</button>`).join('')}</div>
-      <label class="l">Owned on ${g.copies.length} account${g.copies.length===1?'':'s'}</label>
-      <div id="mOwn">${g.copies.map(c=>{const a=acctById(c.accountId);if(!a)return'';return`<div class="own">${badge(a,'lg')}<div class="info"><div><b>${esc(srcName(a))}</b> · ${esc(a.username||'—')}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · added ${new Date(c.added||Date.now()).toLocaleDateString('en-GB')}</div></div><button class="iconbtn" data-del="${c.id}" title="Remove from this account">✕</button></div>`;}).join('')}</div>
+      <label class="l">Owned on ${new Set(g.copies.map(c=>c.accountId)).size} account${new Set(g.copies.map(c=>c.accountId)).size===1?'':'s'}</label>
+      <div id="mOwn">${[...new Map(g.copies.map(c=>[c.accountId,c])).values()].map(c=>{const a=acctById(c.accountId);if(!a)return'';return`<div class="own">${badge(a,'lg')}<div class="info"><div><b>${esc(srcName(a))}</b> · ${esc(a.username||'—')}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · added ${new Date(c.added||Date.now()).toLocaleDateString('en-GB')}</div></div><button class="iconbtn" data-del="${c.accountId}" title="Remove from this account">✕</button></div>`;}).join('')}</div>
       <div class="row" style="margin-top:22px">
         <button class="btn ghost sm" id="mRename">Rename</button>
         <button class="btn danger sm" id="mDelete">Delete game</button>
@@ -568,13 +593,13 @@ function openGame(key){
   $('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
   $('#mx').onclick=closeModal;
   $('#mSeg').onclick=e=>{const s=e.target.dataset.s;if(!s)return;meta(key).status=s;save();openGame(key);renderLibrary();};
-  $('#mOwn').onclick=e=>{const id=e.target.dataset.del;if(!id)return;db.games=db.games.filter(x=>x.id!==id);save();renderLibrary();openGame(key);toast('Removed from that account');};
+  $('#mOwn').onclick=e=>{const aid=e.target.dataset.del;if(!aid)return;db.games=db.games.filter(x=>!(x.accountId===aid&&(norm(x.title)||x.title.toLowerCase())===key));save();renderLibrary();openGame(key);toast('Removed from that account');};
   $('#mDelete').onclick=()=>{if(!confirm(`Delete ${g.title} from every account?`))return;db.games=db.games.filter(x=>(norm(x.title)||x.title.toLowerCase())!==key);save();closeModal();render();toast('Game deleted');};
   $('#mRename').onclick=()=>{const t=prompt('Game title',g.title);if(!t||!t.trim())return;const nk=norm(t);
     g.copies.forEach(c=>c.title=t.trim()); if(nk!==key){db.meta[nk]={...(db.meta[key]||{}),...(db.meta[nk]||{}),cover:db.meta[nk]?.cover};if(db.meta[nk].cover===undefined)delete db.meta[nk].cover;}
     save();render();openGame(nk);};
-  $('#mFind').onclick=async()=>{const b=$('#mFind');b.innerHTML='<span class="spin"></span>';const url=await findCover(g.title,meta(key).appid);meta(key).cover=url;save();paintCover(key);b.textContent='Find cover';toast(url?'Cover updated':'No cover found, try Use URL');};
-  $('#mUrl').onclick=()=>{const u=prompt('Paste an image URL for the cover (right-click an image → Copy image address)');if(!u)return;if(!/^https?:\/\//.test(u.trim()))return toast('That needs to be a web link');meta(key).cover=u.trim();save();paintCover(key);};
+  $('#mFind').onclick=async()=>{const b=$('#mFind');b.innerHTML='<span class="spin"></span>';const url=await findCover(g.title,meta(key).appid,meta(key).year);meta(key).cover=url;delete meta(key).coverCustom;save();paintCover(key);b.textContent='Find cover';toast(url?'Cover updated':'No cover found, try Use URL');};
+  $('#mUrl').onclick=()=>{const u=prompt('Paste an image URL for the cover (right-click an image → Copy image address)');if(!u)return;if(!/^https?:\/\//.test(u.trim()))return toast('That needs to be a web link');meta(key).cover=u.trim();meta(key).coverCustom=true;save();paintCover(key);};
   document.onkeydown=e=>{if(e.key==='Escape')closeModal();};
 }
 function closeModal(){$('#modalRoot').innerHTML='';document.onkeydown=null;}
@@ -645,7 +670,8 @@ Rules:
 - Skip anything you can't confidently identify. Never invent games.
 
 Reply with JSON only, in this shape:
-{"platform":"steam|epic|gog|xbox|playstation|nintendo|ea|ubisoft|battlenet|amazon|itch|rockstar|other|unknown","games":[{"title":"...","confidence":0.0-1.0,"steam_appid":number or null}]}
+{"platform":"steam|epic|gog|xbox|playstation|nintendo|ea|ubisoft|battlenet|amazon|itch|rockstar|other|unknown","games":[{"title":"...","year":number or null,"confidence":0.0-1.0,"steam_appid":number or null}]}
+"year" is the original release year of the exact game shown. When several games share a name (e.g. Star Wars Battlefront II 2005 vs 2017), use the cover art and the store to decide which one it is.
 steam_appid only if you are certain of it, otherwise null.`;
 
 const ai=()=>({prov:db.settings.aiProvider||'claude',key:db.settings.aiKey||''});
@@ -751,7 +777,7 @@ $('#scanBtn').onclick=async()=>{
     try{
       const res=await readScreenshot(s.file);
       if(res.platform&&res.platform!=='unknown') lastPlatform=res.platform;
-      found+=mergeCands((res.games||[]).map(g=>({title:String(g.title||'').trim(),conf:typeof g.confidence==='number'?g.confidence:null,appid:Number(g.steam_appid)||null})));
+      found+=mergeCands((res.games||[]).map(g=>({title:String(g.title||'').trim(),conf:typeof g.confidence==='number'?g.confidence:null,appid:Number(g.steam_appid)||null,year:Number(g.year)||null})));
       s.state='done';
     }catch(err){ s.state=''; failed++; toast(err.message); console.error(err); if(/key|limit/i.test(err.message)) break; }
     renderThumbs();
@@ -766,8 +792,8 @@ function mergeCands(list){
   const have=new Set(cands.map(c=>norm(c.title))); let added=0;
   for(const p of list){ const k=norm(p.title); if(!k) continue;
     if(have.has(k)){ merged++; continue; } have.add(k);
-    cands.push({id:uid(),title:p.title,conf:p.conf,appid:p.appid,on:p.conf==null||p.conf>=0.55}); added++;
-    wantCover(k,p.title,p.appid);
+    cands.push({id:uid(),title:p.title,conf:p.conf,appid:p.appid,year:p.year,on:p.conf==null||p.conf>=0.55}); added++;
+    wantCover(k,p.title,p.appid,p.year);
   }
   renderCands(); if(added) $('#reviewPanel').scrollIntoView({behavior:'smooth',block:'start'});
   return added;
@@ -794,14 +820,14 @@ $('#cands').addEventListener('click',e=>{const cv=e.target.closest('.cover');if(
   if(ownedSet().has(norm(c.title)))return toast('Already on this account');c.on=!c.on;renderCands();});
 $('#cands').addEventListener('change',e=>{const row=e.target.closest('.cand');if(!row)return;const c=cands.find(x=>x.id===row.dataset.id);const t=e.target.value.trim();if(!t)return;
   const k=norm(t); if(cands.some(x=>x!==c&&norm(x.title)===k)){toast('That game is already in the list');cands=cands.filter(x=>x!==c);merged++;renderCands();return;}
-  c.title=t;c.appid=null;wantCover(k,t);renderCands();});
+  c.title=t;c.appid=null;c.year=null;wantCover(k,t);renderCands();});
 $('#selAll').onclick=()=>{cands.forEach(c=>c.on=true);renderCands();};
 $('#selNone').onclick=()=>{cands.forEach(c=>c.on=false);renderCands();};
 $('#clearCands').onclick=()=>{cands=[];merged=0;lastPlatform=null;renderCands();};
 $('#addSel').onclick=()=>{
   const acct=$('#impAcct').value;if(!acct)return toast('Pick which account these are from');
   const owned=ownedSet();let added=0;
-  for(const c of cands.filter(c=>c.on)){const k=norm(c.title);if(owned.has(k))continue;owned.add(k);db.games.push({id:uid(),title:c.title.trim(),accountId:acct,added:Date.now()});if(c.appid&&!meta(k).appid)meta(k).appid=c.appid;added++;}
+  for(const c of cands.filter(c=>c.on)){const k=norm(c.title);if(owned.has(k))continue;owned.add(k);db.games.push({id:uid(),title:c.title.trim(),accountId:acct,added:Date.now()});if(c.appid&&!meta(k).appid)meta(k).appid=c.appid;if(c.year&&!meta(k).year)meta(k).year=c.year;added++;}
   save(); cands=cands.filter(c=>!c.on); if(!cands.length){merged=0;lastPlatform=null;} renderCands(); render();
   toast(`Added ${added} game${added===1?'':'s'} to ${acctLabel(acctById(acct))}`);
   if(!cands.length) show('library');
@@ -828,6 +854,13 @@ $('#wipe').onclick=()=>{if(!confirm('Delete all accounts and games from this bro
 /* =================== go =================== */
 // one-time cleanup of junk from the old text-reader version: drop stale "pending" flags
 for(const k in db.meta) delete db.meta[k].coverPending;
+// one copy per game per account (older versions could add the same game twice to one account)
+(()=>{const seen=new Set(),before=db.games.length;db.games=db.games.filter(g=>{const id=g.accountId+'|'+(norm(g.title)||g.title.toLowerCase());if(seen.has(id))return false;seen.add(id);return true;});
+  // covers v3: re-look-up every automatic cover once with the better matcher
+  if(db.settings.coverV!==3){for(const k in db.meta){if(!db.meta[k].coverCustom)delete db.meta[k].cover;}db.settings.coverV=3;}
+  save();})();
+// keep tabs in sync: changes made in another tab show up here too
+addEventListener('storage',e=>{if(e.key===KEY){db=load();render();}});
 function render(){renderLibrary();renderAccounts();renderImportAcct();renderAI();renderCands();updScan();}
 render();
 </script>
