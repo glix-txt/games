@@ -153,7 +153,7 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
 .notice.warn{background:rgba(255,181,71,.08);border-color:rgba(255,181,71,.3);color:#ffdca6}
 
 /* accounts */
-.accts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.accts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;align-items:start}
 .acct{display:flex;flex-direction:column;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
 .acct-top{display:flex;gap:14px;align-items:center}
 .acct-foot{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
@@ -169,9 +169,9 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
 .pins .names{flex:1;min-width:0;margin-left:4px;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pins .names b{color:var(--text);font-weight:600}
 .note{font-size:12.5px;font-style:italic;color:var(--muted);cursor:text;line-height:1.4;word-break:break-word}
-.note.empty{font-style:normal;color:var(--dim);opacity:0;transition:opacity .15s}
-.acct:hover .note.empty,.note.empty:focus-visible{opacity:1}
-.note.empty:hover{color:var(--accent)}
+.note.blank{font-style:normal;color:var(--dim);opacity:0;max-height:0;margin-top:-8px;overflow:hidden;transition:opacity .15s,max-height .2s,margin-top .2s}
+.acct:hover .note.blank,.note.blank:focus-visible{opacity:1;max-height:20px;margin-top:0}
+.note.blank:hover{color:var(--accent)}
 .note-in{font-size:12.5px;padding:6px 9px;border-radius:8px}
 .pinrow{display:flex;align-items:center;gap:12px;padding:8px 6px;border-radius:10px;cursor:pointer}
 .pinrow:hover{background:rgba(255,255,255,.04)}
@@ -694,7 +694,7 @@ function renderAccounts(){
         <div class="act"><button class="btn ghost sm" data-act="edit">Edit</button><button class="btn danger sm" data-act="del">Delete</button></div></div>
       <div class="acct-foot">
         <div class="pins">${shown.map(g=>miniHTML(g.key,g.title,auto&&games.length>1?'auto':'')).join('')}<span class="names">${names}</span>${games.length?`<button class="mini add" data-act="pin" title="${pins.length?'Change pinned games':'Pin games'}" aria-label="Pin games">${PIN}</button>`:''}</div>
-        <div class="note ${a.note?'':'empty'}" data-act="note" tabindex="0">${a.note?esc(a.note):'+ Add a note'}</div>
+        <div class="note ${a.note?'':'blank'}" data-act="note" tabindex="0">${a.note?esc(a.note):'+ Add a note'}</div>
       </div></div>`;}).join('');
 }
 $('#acctList').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note')){e.preventDefault();editNote(e.target);}});
