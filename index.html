@@ -167,7 +167,9 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
 .acct:hover .mini.add,.mini.add:focus-visible{opacity:1}
 .mini.add:hover{color:var(--accent)}
 .pins .names{flex:1;min-width:0;margin-left:4px;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pins .names b{color:var(--text);font-weight:600}
+.pins .names{display:flex;align-items:center;gap:7px}
+.pins .names .nm1{color:var(--text);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pins .names .more{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.07);border:1px solid var(--line2);border-radius:999px;padding:1px 7px}
 .note{font-size:12.5px;font-style:italic;color:var(--muted);cursor:text;line-height:1.4;word-break:break-word}
 .note.blank{font-style:normal;color:var(--dim);opacity:0;max-height:0;margin-top:-8px;overflow:hidden;transition:opacity .15s,max-height .2s,margin-top .2s}
 .acct:hover .note.blank,.note.blank:focus-visible{opacity:1;max-height:20px;margin-top:0}
@@ -687,7 +689,8 @@ function renderAccounts(){
   el.innerHTML=db.accounts.map(a=>{const n=db.games.filter(g=>g.accountId===a.id).length;
     const games=acctGames(a), pins=pinsOf(a), shown=pins.length?pins:games.slice(0,3), auto=!pins.length;
     shown.forEach(g=>wantCover(g.key,g.title));
-    const names=games.length===1?`<b>${esc(games[0].title)}</b>`:pins.length?`<b>${pins.map(g=>esc(g.title)).join(' · ')}</b>`:games.length?`${esc(games.slice(0,3).map(g=>g.title).join(' · '))}`:'No games yet';
+    const names=!shown.length?'<span class="nm1" style="font-weight:400">No games yet</span>'
+      :`<span class="nm1">${esc(shown[0].title)}</span>${shown.length>1?`<span class="more" title="${esc(shown.slice(1).map(g=>g.title).join(', '))}">+${shown.length-1}</span>`:''}`;
     return `<div class="acct" data-id="${a.id}">
       <div class="acct-top">${badge(a,'lg')}
         <div class="info"><div><b>${esc(a.username||'—')}</b></div><div class="muted" style="font-size:13px">${esc(srcName(a))} · ${n} game${n===1?'':'s'}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')}</div></div>
