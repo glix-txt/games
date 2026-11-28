@@ -154,7 +154,33 @@ kbd{font:600 12px Inter;background:rgba(255,255,255,.08);border:1px solid var(--
 
 /* accounts */
 .accts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
-.acct{display:flex;gap:14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.acct{display:flex;flex-direction:column;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+.acct-top{display:flex;gap:14px;align-items:center}
+.acct-foot{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.pins{display:flex;align-items:center;gap:6px;min-height:40px}
+.mini{position:relative;width:30px;height:40px;border-radius:6px;overflow:hidden;flex:0 0 auto;cursor:pointer;background:#151821;outline:1px solid var(--line2);transition:transform .15s,outline-color .15s;padding:0;border:0}
+.mini:hover{transform:translateY(-2px);outline-color:var(--accent)}
+.mini img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mini .ph{padding:3px}.mini .ph span{font-size:8px;line-height:1.1;-webkit-line-clamp:3}
+.mini.auto{opacity:.55}.mini.auto:hover{opacity:1}
+.mini.add{display:grid;place-items:center;background:transparent;outline:1px dashed var(--line2);color:var(--dim);font-size:16px;opacity:0}
+.acct:hover .mini.add,.mini.add:focus-visible{opacity:1}
+.mini.add:hover{color:var(--accent)}
+.pins .names{flex:1;min-width:0;margin-left:4px;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pins .names b{color:var(--text);font-weight:600}
+.note{font-size:12.5px;font-style:italic;color:var(--muted);cursor:text;line-height:1.4;word-break:break-word}
+.note.empty{font-style:normal;color:var(--dim);opacity:0;transition:opacity .15s}
+.acct:hover .note.empty,.note.empty:focus-visible{opacity:1}
+.note.empty:hover{color:var(--accent)}
+.note-in{font-size:12.5px;padding:6px 9px;border-radius:8px}
+.pinrow{display:flex;align-items:center;gap:12px;padding:8px 6px;border-radius:10px;cursor:pointer}
+.pinrow:hover{background:rgba(255,255,255,.04)}
+.pinrow .mini{width:34px;height:45px;cursor:pointer}
+.pinrow .nm{flex:1;min-width:0;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pinbtn{width:30px;height:30px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--dim);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}
+.pinbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pinbtn:disabled{opacity:.3;cursor:not-allowed}
+.sheet.small{grid-template-columns:1fr;width:min(460px,100%)}
 .acct .info{flex:1;min-width:0}
 .acct .info div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct .act{display:flex;gap:6px;flex-direction:column}
@@ -504,6 +530,7 @@ function coverHTML(key,title){
 }
 function nextSrc(img){const s=img.dataset.srcs.split('|');s.shift();if(s.length){img.dataset.srcs=s.join('|');img.src=s[0];}else img.remove();}
 function paintCover(key){
+  document.querySelectorAll(`.mini[data-game="${CSS.escape(key)}"]`).forEach(el=>{const t=el.getAttribute('title');const tmp=document.createElement('div');tmp.innerHTML=miniHTML(key,t,el.className.replace('mini','').trim());el.replaceWith(tmp.firstElementChild);});
   document.querySelectorAll(`[data-cover="${CSS.escape(key)}"]`).forEach(el=>{
     const title=el.dataset.title; const keep=[...el.querySelectorAll('.st,.cnt,.srcs,.sel-box,.tick,.flag')];
     el.innerHTML=coverHTML(key,title); keep.forEach(k=>el.appendChild(k));
@@ -591,7 +618,7 @@ function openGame(key){
       <label class="l">Status</label>
       <div class="seg" id="mSeg">${Object.entries(STATUSES).map(([k,v])=>`<button data-s="${k}" class="${st===k?'on':''}">${v}</button>`).join('')}</div>
       <label class="l">Owned on ${new Set(g.copies.map(c=>c.accountId)).size} account${new Set(g.copies.map(c=>c.accountId)).size===1?'':'s'}</label>
-      <div id="mOwn">${[...new Map(g.copies.map(c=>[c.accountId,c])).values()].map(c=>{const a=acctById(c.accountId);if(!a)return'';return`<div class="own">${badge(a,'lg')}<div class="info"><div><b>${esc(srcName(a))}</b> · ${esc(a.username||'—')}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · added ${new Date(c.added||Date.now()).toLocaleDateString('en-GB')}</div></div><button class="iconbtn" data-del="${c.accountId}" title="Remove from this account">✕</button></div>`;}).join('')}</div>
+      <div id="mOwn">${[...new Map(g.copies.map(c=>[c.accountId,c])).values()].map(c=>{const a=acctById(c.accountId);if(!a)return'';return`<div class="own">${badge(a,'lg')}<div class="info"><div><b>${esc(srcName(a))}</b> · ${esc(a.username||'—')}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')} · added ${new Date(c.added||Date.now()).toLocaleDateString('en-GB')}</div></div><button class="pinbtn ${(a.pins||[]).includes(key)?'on':''}" data-pin="${c.accountId}" title="${(a.pins||[]).includes(key)?'Unpin from':'Pin to'} this account" style="margin-right:6px">${PIN}</button><button class="iconbtn" data-del="${c.accountId}" title="Remove from this account">✕</button></div>`;}).join('')}</div>
       <div class="row" style="margin-top:22px">
         <button class="btn ghost sm" id="mRename">Rename</button>
         <button class="btn danger sm" id="mDelete">Delete game</button>
@@ -600,7 +627,7 @@ function openGame(key){
   $('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
   $('#mx').onclick=closeModal;
   $('#mSeg').onclick=e=>{const s=e.target.dataset.s;if(!s)return;meta(key).status=s;save();openGame(key);renderLibrary();};
-  $('#mOwn').onclick=e=>{const aid=e.target.dataset.del;if(!aid)return;db.games=db.games.filter(x=>!(x.accountId===aid&&(norm(x.title)||x.title.toLowerCase())===key));save();renderLibrary();renderCands();openGame(key);toast('Removed from that account');};
+  $('#mOwn').onclick=e=>{const pb=e.target.closest('[data-pin]');if(pb){const a=acctById(pb.dataset.pin);if(togglePin(a,key)){openGame(key);renderAccounts();toast((a.pins||[]).includes(key)?`Pinned to ${a.username||srcName(a)}`:'Unpinned');}return;}const aid=e.target.dataset.del;if(!aid)return;db.games=db.games.filter(x=>!(x.accountId===aid&&(norm(x.title)||x.title.toLowerCase())===key));save();renderLibrary();renderCands();openGame(key);toast('Removed from that account');};
   $('#mDelete').onclick=()=>{if(!confirm(`Delete ${g.title} from every account?`))return;db.games=db.games.filter(x=>(norm(x.title)||x.title.toLowerCase())!==key);save();closeModal();render();toast('Game deleted');};
   $('#mRename').onclick=()=>{const t=prompt('Game title',g.title);if(!t||!t.trim())return;const nk=norm(t);
     g.copies.forEach(c=>c.title=t.trim()); if(nk!==key){db.meta[nk]={...(db.meta[key]||{}),...(db.meta[nk]||{}),cover:db.meta[nk]?.cover};if(db.meta[nk].cover===undefined)delete db.meta[nk].cover;}
@@ -641,18 +668,73 @@ $('#iconFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f||!
     const r=Math.min(S/img.width,S/img.height);const w=img.width*r,h=img.height*r;x.drawImage(img,(S-w)/2,(S-h)/2,w,h);
     db.settings.icons={...(db.settings.icons||{}),[iconTarget]:c.toDataURL('image/png')};save();render();toast('Icon updated');URL.revokeObjectURL(img.src);};
   img.onerror=()=>toast("Couldn't open that image");img.src=URL.createObjectURL(f);};
+const PIN='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M5 17h14v-1.8a2 2 0 0 0-1.1-1.8l-1.8-.9A2 2 0 0 1 15 10.8V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2Z"/></svg>';
+const gkey=g=>norm(g.title)||g.title.toLowerCase();
+function acctGames(a){ // one entry per game on this account, newest first
+  const m=new Map(); db.games.filter(g=>g.accountId===a.id).sort((x,y)=>(y.added||0)-(x.added||0)).forEach(g=>{const k=gkey(g); if(!m.has(k)) m.set(k,{key:k,title:g.title});});
+  return [...m.values()];
+}
+function pinsOf(a){ const have=new Map(acctGames(a).map(g=>[g.key,g])); return (a.pins||[]).filter(k=>have.has(k)).map(k=>have.get(k)); }
+function miniHTML(key,title,cls=''){
+  const srcs=coverSrcs(db.meta[key]?.cover);
+  return `<button class="mini ${cls}" data-game="${esc(key)}" title="${esc(title)}" aria-label="${esc(title)}"><span class="ph" style="--h:${hue(title)}"><span>${esc(title)}</span></span>${srcs.length?`<img alt="" loading="lazy" data-srcs="${esc(srcs.join('|'))}" src="${esc(srcs[0])}" onerror="nextSrc(this)">`:''}</button>`;
+}
 function renderAccounts(){
   renderIcons();
   $('#maskEmail').checked=!!db.settings.mask;
   const el=$('#acctList');
   if(!db.accounts.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No accounts yet. Add your Steam, Epic, Xbox and other accounts above.</div>';return;}
   el.innerHTML=db.accounts.map(a=>{const n=db.games.filter(g=>g.accountId===a.id).length;
-    return `<div class="acct" data-id="${a.id}">${badge(a,'lg')}
-      <div class="info"><div><b>${esc(a.username||'—')}</b></div><div class="muted" style="font-size:13px">${esc(srcName(a))} · ${n} game${n===1?'':'s'}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')}</div></div>
-      <div class="act"><button class="btn ghost sm" data-act="edit">Edit</button><button class="btn danger sm" data-act="del">Delete</button></div></div>`;}).join('');
+    const games=acctGames(a), pins=pinsOf(a), shown=pins.length?pins:games.slice(0,3), auto=!pins.length;
+    shown.forEach(g=>wantCover(g.key,g.title));
+    const names=games.length===1?`<b>${esc(games[0].title)}</b>`:pins.length?`<b>${pins.map(g=>esc(g.title)).join(' · ')}</b>`:games.length?`${esc(games.slice(0,3).map(g=>g.title).join(' · '))}`:'No games yet';
+    return `<div class="acct" data-id="${a.id}">
+      <div class="acct-top">${badge(a,'lg')}
+        <div class="info"><div><b>${esc(a.username||'—')}</b></div><div class="muted" style="font-size:13px">${esc(srcName(a))} · ${n} game${n===1?'':'s'}</div><div class="muted" style="font-size:13px">${esc(maskEmail(a.email)||'no email')}</div></div>
+        <div class="act"><button class="btn ghost sm" data-act="edit">Edit</button><button class="btn danger sm" data-act="del">Delete</button></div></div>
+      <div class="acct-foot">
+        <div class="pins">${shown.map(g=>miniHTML(g.key,g.title,auto&&games.length>1?'auto':'')).join('')}<span class="names">${names}</span>${games.length?`<button class="mini add" data-act="pin" title="${pins.length?'Change pinned games':'Pin games'}" aria-label="Pin games">${PIN}</button>`:''}</div>
+        <div class="note ${a.note?'':'empty'}" data-act="note" tabindex="0">${a.note?esc(a.note):'+ Add a note'}</div>
+      </div></div>`;}).join('');
+}
+$('#acctList').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note')){e.preventDefault();editNote(e.target);}});
+function editNote(el){
+  const a=acctById(el.closest('.acct').dataset.id);
+  const inp=document.createElement('input'); inp.className='note-in'; inp.maxLength=140; inp.value=a.note||''; inp.placeholder='e.g. Main account, 2FA on phone';
+  el.replaceWith(inp); inp.focus();
+  let done=false; const finish=ok=>{if(done)return;done=true; if(ok){a.note=inp.value.trim(); if(!a.note) delete a.note; save();} renderAccounts();};
+  inp.onkeydown=e=>{if(e.key==='Enter')finish(true); if(e.key==='Escape')finish(false);};
+  inp.onblur=()=>finish(true);
+}
+function togglePin(a,key){
+  a.pins=(a.pins||[]).filter(k=>acctGames(a).some(g=>g.key===k));
+  if(a.pins.includes(key)) a.pins=a.pins.filter(k=>k!==key);
+  else { if(a.pins.length>=3){toast('You can pin 3 games per account');return false;} a.pins.push(key); }
+  save(); return true;
+}
+function openPins(aid){
+  const a=acctById(aid); const games=acctGames(a); const pinned=new Set(pinsOf(a).map(g=>g.key));
+  const q=(document.getElementById('pinQ')?.value||'');
+  const list=games.filter(g=>!q||g.title.toLowerCase().includes(q.toLowerCase())).sort((x,y)=>(pinned.has(y.key)-pinned.has(x.key))||x.title.localeCompare(y.title));
+  const wasOpen=!!document.getElementById('pinSheet');
+  const body=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">${badge(a,'lg')}<div><h2 style="font-size:20px;margin:0">Pin games</h2><div class="muted" style="font-size:13px">${esc(a.username||srcName(a))} · ${pinned.size}/3 pinned</div></div></div>
+    ${games.length>6?`<input id="pinQ" placeholder="Search this account…" value="${esc(q)}" style="margin:14px 0 6px">`:'<div style="height:10px"></div>'}
+    <div id="pinList" style="max-height:52vh;overflow:auto;margin:0 -6px">${list.map(g=>{const on=pinned.has(g.key);
+      return `<div class="pinrow" data-k="${esc(g.key)}">${miniHTML(g.key,g.title)}<span class="nm">${esc(g.title)}</span><button class="pinbtn ${on?'on':''}" ${!on&&pinned.size>=3?'disabled':''} aria-label="${on?'Unpin':'Pin'}">${PIN}</button></div>`;}).join('')||'<div class="muted" style="padding:10px 6px">No games match.</div>'}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn sm" id="pinDone">Done</button></div>`;
+  if(wasOpen){ document.querySelector('#pinSheet .body').innerHTML=body; }
+  else $('#modalRoot').innerHTML=`<div class="modal" id="modal"><div class="sheet small" id="pinSheet" role="dialog" aria-label="Pin games"><button class="x" id="mx" aria-label="Close">×</button><div class="body" style="padding:24px">${body}</div></div></div>`;
+  const qi=document.getElementById('pinQ'); if(qi){ qi.oninput=()=>{const pos=qi.selectionStart;openPins(aid);const n=document.getElementById('pinQ');n.focus();n.setSelectionRange(pos,pos);}; }
+  $('#pinList').onclick=e=>{const r=e.target.closest('.pinrow');if(!r)return;if(e.target.closest('.pinbtn:disabled'))return;if(togglePin(a,r.dataset.k)){openPins(aid);renderAccounts();}};
+  $('#pinDone').onclick=closeModal; $('#mx').onclick=closeModal;
+  $('#modal').onclick=e=>{if(e.target.id==='modal')closeModal();};
+  document.onkeydown=e=>{if(e.key==='Escape')closeModal();};
 }
 $('#acctList').onclick=e=>{
+  const gm=e.target.closest('[data-game]'); if(gm){openGame(gm.dataset.game);return;}
+  const nt=e.target.closest('.note'); if(nt){editNote(nt);return;}
   const b=e.target.closest('button');if(!b)return;const card=b.closest('.acct');const a=acctById(card.dataset.id);
+  if(b.dataset.act==='pin'){openPins(a.id);return;}
   if(b.dataset.act==='del'){const n=db.games.filter(g=>g.accountId===a.id).length;
     if(!confirm(`Delete ${acctLabel(a)}${n?` and its ${n} game${n===1?'':'s'}`:''}?`))return;
     db.accounts=db.accounts.filter(x=>x.id!==a.id);db.games=db.games.filter(g=>g.accountId!==a.id);save();render();toast('Account deleted');}
